@@ -11,11 +11,16 @@ New-Item -ItemType Directory -Force $assetsRoot | Out-Null
 New-Item -ItemType Directory -Force $serverRoot | Out-Null
 
 $page = Invoke-WebRequest -UseBasicParsing $PreviewUrl
-[System.IO.File]::WriteAllText((Join-Path $assetsRoot "index.html"), $page.Content, [System.Text.UTF8Encoding]::new($false))
+$staticHtml = $page.Content
+$staticHtml = $staticHtml.Replace('href="/css/', 'href="./css/')
+$staticHtml = $staticHtml.Replace('src="/images/', 'src="./images/')
+$staticHtml = $staticHtml.Replace('src="/js/', 'src="./js/')
+[System.IO.File]::WriteAllText((Join-Path $assetsRoot "index.html"), $staticHtml, [System.Text.UTF8Encoding]::new($false))
 
 Copy-Item -Recurse -Force (Join-Path $projectRoot "wwwroot\css") $assetsRoot
 Copy-Item -Recurse -Force (Join-Path $projectRoot "wwwroot\js") $assetsRoot
 Copy-Item -Recurse -Force (Join-Path $projectRoot "wwwroot\images") $assetsRoot
 Copy-Item -Force (Join-Path $PSScriptRoot "worker.js") (Join-Path $serverRoot "index.js")
+[System.IO.File]::WriteAllText((Join-Path $assetsRoot ".nojekyll"), "", [System.Text.UTF8Encoding]::new($false))
 
 Write-Output $distRoot
