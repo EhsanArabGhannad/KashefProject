@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const toFa = (value) => String(value).replace(/\d/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[digit]);
   const revealItems = document.querySelectorAll(".reveal");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -34,15 +33,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const renderCart = () => {
     if (!cartItems || !cartCount) return;
-    cartCount.textContent = toFa(cart.length);
+    cartCount.textContent = String(cart.length);
     if (!cart.length) {
-      cartItems.innerHTML = '<div class="empty-cart"><span>۰</span><h3>سبدت هنوز خالیه</h3><p>یه چیز خاص برای شروع انتخاب کن.</p></div>';
+      cartItems.innerHTML = '<div class="empty-cart"><span>0</span><h3>Your bag is empty</h3><p>Pick something distinctive to get started.</p></div>';
       return;
     }
     cartItems.innerHTML = cart.map((item, index) => `
       <div class="cart-line">
         <div><strong>${item.name}</strong><span>${item.price}</span></div>
-        <b>${toFa(index + 1)}</b>
+        <b>${index + 1}</b>
       </div>`).join("");
   };
 
@@ -65,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
     button.addEventListener("click", () => {
       cart.push({ name: button.dataset.add, price: button.dataset.price });
       renderCart();
-      showToast(`${button.dataset.add} به سبد اضافه شد.`);
+      showToast(`${button.dataset.add} was added to your bag.`);
     });
   });
 
@@ -79,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.querySelector("[data-custom-order]")?.addEventListener("click", () => {
-    showToast("فرم سفارش اختصاصی در نسخه‌ی بعدی فعال می‌شود.");
+    showToast("Custom-order inquiries will open in the next demo step.");
   });
 
   renderCart();
