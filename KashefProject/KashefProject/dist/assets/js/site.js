@@ -1,4 +1,15 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const navToggle = document.querySelector("[data-nav-toggle]");
+  const closeNavigation = () => {
+    document.body.classList.remove("nav-open");
+    navToggle?.setAttribute("aria-expanded", "false");
+  };
+  navToggle?.addEventListener("click", () => {
+    const isOpen = document.body.classList.toggle("nav-open");
+    navToggle.setAttribute("aria-expanded", String(isOpen));
+  });
+  document.querySelectorAll(".nav-links a").forEach((link) => link.addEventListener("click", closeNavigation));
+
   const revealItems = document.querySelectorAll(".reveal");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -26,7 +37,13 @@ document.addEventListener("DOMContentLoaded", () => {
     toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2400);
   };
 
-  const cart = [];
+  let cart = [];
+  try {
+    const savedCart = JSON.parse(localStorage.getItem("craftisma-cart") || "[]");
+    if (Array.isArray(savedCart)) cart = savedCart.slice(0, 20);
+  } catch {
+    cart = [];
+  }
   const cartCount = document.querySelector("[data-cart-count]");
   const cartItems = document.querySelector("[data-cart-items]");
   const cartDrawer = document.querySelector(".cart-drawer");
@@ -34,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const renderCart = () => {
     if (!cartItems || !cartCount) return;
     cartCount.textContent = String(cart.length);
+    localStorage.setItem("craftisma-cart", JSON.stringify(cart));
     if (!cart.length) {
       cartItems.innerHTML = '<div class="empty-cart"><span>0</span><h3>Your bag is empty</h3><p>Pick something distinctive to get started.</p></div>';
       return;
@@ -57,7 +75,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-cart-open]").forEach((button) => button.addEventListener("click", openCart));
   document.querySelectorAll("[data-cart-close]").forEach((button) => button.addEventListener("click", closeCart));
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeCart();
+    if (event.key === "Escape") {
+      closeCart();
+      closeNavigation();
+    }
   });
 
   document.querySelectorAll("[data-add]").forEach((button) => {
@@ -69,16 +90,36 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const preview = document.querySelector(".custom-preview");
-  document.querySelectorAll(".swatch").forEach((swatch) => {
-    swatch.addEventListener("click", () => {
-      document.querySelectorAll(".swatch").forEach((item) => item.classList.remove("is-active"));
-      swatch.classList.add("is-active");
-      preview?.style.setProperty("--piece-color", swatch.dataset.color);
+  document.querySelectorAll(".swatches").forEach((group) => {
+    group.querySelectorAll(".swatch").forEach((swatch) => {
+      swatch.addEventListener("click", () => {
+        group.querySelectorAll(".swatch").forEach((item) => item.classList.remove("is-active"));
+        swatch.classList.add("is-active");
+        if (swatch.dataset.color) preview?.style.setProperty("--piece-color", swatch.dataset.color);
+        const selectedColor = document.querySelector("[data-selected-color]");
+        if (selectedColor && swatch.dataset.colorName) selectedColor.textContent = swatch.dataset.colorName;
+      });
     });
   });
 
-  document.querySelector("[data-custom-order]")?.addEventListener("click", () => {
-    showToast("Custom-order inquiries will open in the next demo step.");
+  const galleryMain = document.querySelector("[data-gallery-main]");
+  const galleryLabel = document.querySelector("[data-view-label]");
+  document.querySelectorAll("[data-gallery-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll("[data-gallery-view]").forEach((item) => item.classList.remove("is-active"));
+      button.classList.add("is-active");
+      if (galleryMain) {
+        galleryMain.classList.remove("product-main-image--front", "product-main-image--detail", "product-main-image--angle");
+        galleryMain.classList.add(`product-main-image--${button.dataset.galleryView}`);
+      }
+      if (galleryLabel) galleryLabel.textContent = button.dataset.galleryLabel || "PRODUCT VIEW";
+    });
+  });
+
+  document.querySelector("[data-contact-form]")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    event.currentTarget.reset();
+    showToast("Thanks — your demo inquiry is ready to send.");
   });
 
   renderCart();

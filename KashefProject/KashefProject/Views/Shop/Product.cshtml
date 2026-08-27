@@ -1,0 +1,70 @@
+@model Product
+@{
+    ViewData["Title"] = Model.Name;
+    ViewData["Description"] = Model.Description;
+    ViewData["OgImage"] = $"https://ehsanarabghannad.github.io/KashefProject{Model.ImagePath}";
+}
+
+<main>
+    <section class="product-detail">
+        <div class="product-gallery reveal" data-product-gallery>
+            <div class="product-main-image product-main-image--front @Model.CardClass" data-gallery-main>
+                <img src="@Model.ImagePath" alt="@Model.ImageAlt" />
+                <span class="product-image-label" data-view-label>FRONT VIEW</span>
+                <span class="gallery-hint">Select a view below</span>
+            </div>
+            <div class="product-thumbnails" aria-label="Product image views">
+                <button class="is-active" type="button" data-gallery-view="front" data-gallery-label="FRONT VIEW" aria-label="Show front view">
+                    <img src="@Model.ImagePath" alt="" />
+                </button>
+                <button type="button" data-gallery-view="detail" data-gallery-label="TEXTURE DETAIL" aria-label="Show texture detail">
+                    <img src="@Model.ImagePath" alt="" />
+                </button>
+                <button type="button" data-gallery-view="angle" data-gallery-label="SIDE PROFILE" aria-label="Show side profile">
+                    <img src="@Model.ImagePath" alt="" />
+                </button>
+            </div>
+        </div>
+
+        <div class="product-detail-copy reveal">
+            <a class="back-link" href="/shop/">← Back to shop</a>
+            <span class="product-detail-category">@Model.CategoryName / @Model.Badge</span>
+            <h1>@Model.Name</h1>
+            <strong class="product-detail-price">@Model.Price</strong>
+            <p class="product-detail-description">@Model.Description</p>
+
+            <div class="product-options">
+                <div>
+                    <span>SELECT A COLOR</span>
+                    <div class="swatches swatches--light" aria-label="Choose a product color">
+                        <button class="swatch is-active" type="button" data-color-name="Matte black" style="--swatch:#1b1b1b" aria-label="Matte black"></button>
+                        <button class="swatch" type="button" data-color-name="Warm ivory" style="--swatch:#eee6d7" aria-label="Warm ivory"></button>
+                        <button class="swatch" type="button" data-color-name="Coral orange" style="--swatch:#ff6b35" aria-label="Coral orange"></button>
+                        <button class="swatch" type="button" data-color-name="Soft lavender" style="--swatch:#c7b8ff" aria-label="Soft lavender"></button>
+                    </div>
+                    <small data-selected-color>Matte black</small>
+                </div>
+            </div>
+
+            <button class="button button-dark product-add" type="button" data-add="@Model.Name" data-price="@Model.Price">Add to bag <span>→</span></button>
+
+            <dl class="product-specs">
+                <div><dt>Size</dt><dd>@Model.Size</dd></div>
+                <div><dt>Material</dt><dd>@Model.Material</dd></div>
+                <div><dt>Finish</dt><dd>@Model.Finish</dd></div>
+            </dl>
+            <ul class="product-highlights">
+                @foreach (var highlight in Model.Highlights)
+                {
+                    <li>@highlight</li>
+                }
+            </ul>
+        </div>
+    </section>
+
+    <section class="detail-story reveal">
+        <span>MADE ONE LAYER AT A TIME</span>
+        <h2>A digital form,<br /><em>finished by hand.</em></h2>
+        <p>Small variations in the printed texture are part of the process—each one is a subtle record of how your piece was made.</p>
+    </section>
+</main>

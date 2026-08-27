@@ -1,0 +1,35 @@
+@model IReadOnlyList<ProductCategory>
+@{
+    ViewData["Title"] = "Gallery";
+    ViewData["Description"] = "Explore Craftisma's collection of 3D-printed sculptures, vases, and wall art by category.";
+}
+
+<main>
+    <section class="page-hero page-hero--gallery">
+        <div class="page-hero-copy reveal">
+            <span class="eyebrow"><i></i> The Craftisma gallery</span>
+            <h1>Three ways to make<br /><em>a space your own.</em></h1>
+            <p>Browse the collection as sculpture, functional form, or art for your walls.</p>
+        </div>
+        <span class="page-index">G / 03</span>
+    </section>
+
+    <section class="gallery-list" aria-label="Product categories">
+        @for (var index = 0; index < Model.Count; index++)
+        {
+            var category = Model[index];
+            <a class="gallery-row reveal @category.CardClass" href="/gallery/@category.Slug/">
+                <span class="gallery-row-number">0@(index + 1)</span>
+                <div class="gallery-row-copy">
+                    <small>@category.Kicker</small>
+                    <h2>@category.Name</h2>
+                    <p>@category.Description</p>
+                    <b>Open category →</b>
+                </div>
+                <div class="gallery-row-image">
+                    <img src="@category.ImagePath" alt="@category.ImageAlt" loading="lazy" />
+                </div>
+            </a>
+        }
+    </section>
+</main>

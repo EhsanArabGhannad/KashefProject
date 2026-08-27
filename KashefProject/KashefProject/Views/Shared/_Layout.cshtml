@@ -1,27 +1,35 @@
+@{
+    var pageTitle = ViewData["Title"]?.ToString() ?? "Objects unlike anyone else's";
+    var pageDescription = ViewData["Description"]?.ToString() ?? "Craftisma creates distinctive 3D-printed decor and gifts, made one layer at a time.";
+    var pageImage = ViewData["OgImage"]?.ToString() ?? "https://ehsanarabghannad.github.io/KashefProject/images/og.png";
+}
 <!DOCTYPE html>
 <html lang="en-US" dir="ltr">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f1ea" />
-    <meta name="description" content="Craftisma creates distinctive 3D-printed decor and gifts, made one layer at a time." />
+    <meta name="description" content="@pageDescription" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Craftisma | Objects unlike anyone else's" />
-    <meta property="og:description" content="Distinctive 3D-printed decor and gifts, made one layer at a time." />
-    <meta property="og:image" content="https://ehsanarabghannad.github.io/KashefProject/images/og.png" />
-    <meta property="og:image:alt" content="Craftisma — Objects unlike anyone else's" />
+    <meta property="og:title" content="@pageTitle | Craftisma" />
+    <meta property="og:description" content="@pageDescription" />
+    <meta property="og:image" content="@pageImage" />
+    <meta property="og:image:alt" content="@pageTitle — Craftisma" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Craftisma | Objects unlike anyone else's" />
-    <meta name="twitter:description" content="Distinctive 3D-printed decor and gifts, made one layer at a time." />
-    <meta name="twitter:image" content="https://ehsanarabghannad.github.io/KashefProject/images/og.png" />
-    <title>@ViewData["Title"] | Craftisma</title>
+    <meta name="twitter:title" content="@pageTitle | Craftisma" />
+    <meta name="twitter:description" content="@pageDescription" />
+    <meta name="twitter:image" content="@pageImage" />
+    <title>@pageTitle | Craftisma</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
+    <partial name="_SiteHeader" />
     @RenderBody()
+    <partial name="_SiteFooter" />
+    <partial name="_CartDrawer" />
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

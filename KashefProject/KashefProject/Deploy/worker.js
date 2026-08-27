@@ -5,13 +5,14 @@ export default {
     }
 
     const url = new URL(request.url);
-    if (url.pathname === "/") {
-      url.pathname = "/index.html";
+    if (url.pathname.endsWith("/")) {
+      url.pathname += "index.html";
+      return env.ASSETS.fetch(new Request(url, request));
     }
 
     const response = await env.ASSETS.fetch(new Request(url, request));
     if (response.status === 404 && !url.pathname.includes(".")) {
-      url.pathname = "/index.html";
+      url.pathname += "/index.html";
       return env.ASSETS.fetch(new Request(url, request));
     }
 

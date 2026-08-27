@@ -1,0 +1,16 @@
+@model Product
+
+<article class="product-card @Model.CardClass reveal">
+    <div class="product-visual">
+        <a class="product-image-link" href="/shop/@Model.Slug/" aria-label="View @Model.Name">
+            <span class="product-badge">@Model.Badge</span>
+            <img src="@Model.ImagePath" alt="@Model.ImageAlt" loading="lazy" />
+            <span class="product-view">View piece ↗</span>
+        </a>
+        <button class="quick-add" type="button" data-add="@Model.Name" data-price="@Model.Price" aria-label="Add @Model.Name to bag">＋</button>
+    </div>
+    <a class="product-info" href="/shop/@Model.Slug/" aria-label="View @Model.Name details">
+        <div><h3>@Model.Name</h3><p>@Model.ShortDescription</p></div>
+        <strong>@Model.Price</strong>
+    </a>
+</article>

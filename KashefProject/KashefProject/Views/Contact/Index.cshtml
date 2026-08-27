@@ -1,0 +1,45 @@
+@{
+    ViewData["Title"] = "Contact";
+    ViewData["Description"] = "Contact Craftisma about custom 3D-printed decor, color options, sizing, and made-to-order pieces.";
+}
+
+<main>
+    <section class="contact-page">
+        <div class="contact-intro reveal">
+            <span class="eyebrow eyebrow--light"><i></i> Custom orders & questions</span>
+            <h1>Let's make<br /><em>something yours.</em></h1>
+            <p>Tell us what you have in mind—an existing piece in a new color, a different size, or a completely original idea.</p>
+            <div class="contact-notes">
+                <div><span>01</span><p>Share your idea and preferred size.</p></div>
+                <div><span>02</span><p>We confirm the design, color, and price.</p></div>
+                <div><span>03</span><p>Your piece is printed, finished, and shipped.</p></div>
+            </div>
+        </div>
+        <form class="contact-form reveal" data-contact-form>
+            <div class="form-heading"><span>START A CONVERSATION</span><b>Usually replies within 1–2 business days.</b></div>
+            <label>
+                <span>Your name</span>
+                <input type="text" name="name" autocomplete="name" placeholder="Jane Smith" required />
+            </label>
+            <label>
+                <span>Email address</span>
+                <input type="email" name="email" autocomplete="email" placeholder="jane@example.com" required />
+            </label>
+            <label>
+                <span>What are you interested in?</span>
+                <select name="interest">
+                    <option>Custom color or size</option>
+                    <option>Original custom piece</option>
+                    <option>Product question</option>
+                    <option>Wholesale inquiry</option>
+                </select>
+            </label>
+            <label>
+                <span>Tell us about your idea</span>
+                <textarea name="message" rows="6" placeholder="A few details about the piece, size, color, or space..." required></textarea>
+            </label>
+            <button class="button button-dark" type="submit">Send inquiry <span>→</span></button>
+            <small>This is a concept form for the demo storefront.</small>
+        </form>
+    </section>
+</main>

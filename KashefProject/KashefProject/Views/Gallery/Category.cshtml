@@ -1,0 +1,39 @@
+@model CategoryPageViewModel
+@{
+    ViewData["Title"] = Model.Category.Name;
+    ViewData["Description"] = Model.Category.Description;
+}
+
+<main>
+    <section class="category-hero @Model.Category.CardClass">
+        <div class="category-hero-copy reveal">
+            <a class="back-link" href="/gallery/">← All categories</a>
+            <span class="eyebrow eyebrow--light"><i></i> @Model.Category.Kicker</span>
+            <h1>@Model.Category.Name</h1>
+            <p>@Model.Category.Description</p>
+            <a class="button button-light" href="#category-products">See the collection <span>↓</span></a>
+        </div>
+        <div class="category-hero-image reveal">
+            <img src="@Model.Category.ImagePath" alt="@Model.Category.ImageAlt" />
+            <span>CRAFTISMA / @Model.Category.Name.ToUpperInvariant()</span>
+        </div>
+    </section>
+
+    <section class="products-section inner-products" id="category-products">
+        <div class="section-heading reveal">
+            <div><span class="eyebrow"><i></i> Available now</span><h2>Made in<br /><em>small batches.</em></h2></div>
+            <p>Each piece is made after you order it, with custom color options available.</p>
+        </div>
+        <div class="product-grid product-grid--category">
+            @foreach (var product in Model.Products)
+            {
+                <partial name="_ProductCard" model="product" />
+            }
+            <a class="coming-soon-card reveal" href="/contact/">
+                <span>MORE FORMS IN DEVELOPMENT</span>
+                <h3>Have an idea for this collection?</h3>
+                <b>Start a custom piece →</b>
+            </a>
+        </div>
+    </section>
+</main>
