@@ -17,7 +17,7 @@
                 @for (var index = 0; index < Model.Images.Count; index++)
                 {
                     var image = Model.Images[index];
-                    <button class="@(index == 0 ? "is-active" : null)" type="button" data-gallery-image="@image" data-gallery-label="VIEW @((index + 1).ToString("00"))" aria-label="Show @Model.Name view @(index + 1)">
+                    <button class="@(index == 0 ? "is-active" : null)" type="button" data-gallery-image data-gallery-label="VIEW @((index + 1).ToString("00"))" aria-label="Show @Model.Name view @(index + 1)">
                         <img src="@image" alt="" />
                     </button>
                 }

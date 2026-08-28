@@ -109,7 +109,10 @@ document.addEventListener("DOMContentLoaded", () => {
     button.addEventListener("click", () => {
       document.querySelectorAll("[data-gallery-image]").forEach((item) => item.classList.remove("is-active"));
       button.classList.add("is-active");
-      if (galleryMainImage && button.dataset.galleryImage) galleryMainImage.src = button.dataset.galleryImage;
+      const thumbnailImage = button.querySelector("img");
+      if (galleryMainImage && thumbnailImage) {
+        galleryMainImage.src = thumbnailImage.currentSrc || thumbnailImage.src;
+      }
       galleryMain?.classList.add("is-changing");
       setTimeout(() => galleryMain?.classList.remove("is-changing"), 220);
       if (galleryLabel) galleryLabel.textContent = button.dataset.galleryLabel || "PRODUCT VIEW";
