@@ -1,7 +1,7 @@
 @model IReadOnlyList<Product>
 @{
     ViewData["Title"] = "Shop";
-    ViewData["Description"] = "Shop Craftisma's small-batch 3D-printed decor, wall art, sculptures, and made-to-order gifts.";
+    ViewData["Description"] = "Shop Craftisma's dimensional calligraphy, portrait, and heritage wall panels, made to order.";
 }
 
 <main>
@@ -11,14 +11,14 @@
             <h1>Objects with<br /><em>their own point of view.</em></h1>
             <p>Small-batch pieces, printed to order and available in the color that works for your space.</p>
         </div>
-        <div class="shop-hero-orbit" aria-hidden="true"><span>3</span><small>PIECES<br />AVAILABLE</small></div>
+        <div class="shop-hero-orbit" aria-hidden="true"><span>@Model.Count</span><small>PIECES<br />AVAILABLE</small></div>
     </section>
 
     <section class="shop-toolbar" aria-label="Shop categories">
         <span>SHOP ALL</span>
-        <a href="/gallery/sculptures/">Sculptures</a>
-        <a href="/gallery/vases/">Vases</a>
-        <a href="/gallery/wall-art/">Wall Art</a>
+        <a href="/gallery/calligraphy/">Calligraphy</a>
+        <a href="/gallery/portraits/">Portraits</a>
+        <a href="/gallery/heritage/">Heritage Symbols</a>
     </section>
 
     <section class="shop-products">

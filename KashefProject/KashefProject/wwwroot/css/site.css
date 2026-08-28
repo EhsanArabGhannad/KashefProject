@@ -96,7 +96,7 @@ h1 em, h2 em { font-family: "DM Serif Display", Georgia, serif; font-weight: 400
 }
 .hero-art::before { content: ""; position: absolute; width: 78%; aspect-ratio: 1; border-radius: 50%; background: var(--acid); left: 11%; top: 13%; z-index: -1; }
 .hero-art::after { content: "CRAFT"; position: absolute; inset: auto -7% 2%; z-index: 1; font: 900 clamp(6rem, 13vw, 12rem)/1 Arial; color: rgba(24,24,24,.07); letter-spacing: -.08em; pointer-events: none; }
-.hero-product-image { position: absolute; width: 100%; height: 100%; inset: 0; object-fit: cover; mix-blend-mode: multiply; filter: contrast(1.03); z-index: 0; }
+.hero-product-image { position: absolute; width: 100%; height: 100%; inset: 0; object-fit: cover; filter: contrast(1.03); z-index: 0; }
 .hero-orbit { position: absolute; z-index: 2; border: 1px solid rgba(24,24,24,.3); border-radius: 50%; transform: rotate(-16deg); pointer-events: none; }
 .hero-orbit--one { width: 85%; height: 31%; left: 7%; top: 45%; }
 .hero-orbit--two { width: 58%; height: 86%; left: 22%; top: 8%; }
@@ -173,6 +173,8 @@ h2 { font-size: clamp(3rem, 5vw, 5.3rem); letter-spacing: -.065em; line-height: 
 .custom-vase span:nth-child(4) { --i: 3; }
 .custom-vase span:nth-child(5) { --i: 4; }
 .custom-vase::after { content: ""; position: absolute; width: 41%; height: 7%; border-radius: 50%; background: #080808; left: 29.5%; top: 1%; box-shadow: inset 0 3px 0 rgba(255,255,255,.08); }
+.custom-art-preview { position: absolute; width: min(62%, 520px); aspect-ratio: .8; left: 50%; top: 50%; transform: translate(-50%, -48%) rotate(-2deg); padding: 10px; background: #a8782d; box-shadow: 0 34px 60px rgba(0,0,0,.28); }
+.custom-art-preview img { width: 100%; height: 100%; object-fit: cover; }
 .preview-meta { position: absolute; bottom: 4%; left: 5%; right: 5%; display: flex; justify-content: space-between; border-top: 1px solid rgba(24,24,24,.26); padding-top: 14px; font: 700 .68rem Arial, sans-serif; }
 
 .story-section { width: min(1440px, calc(100% - 48px)); margin: 0 auto; padding: 160px 0 90px; display: grid; grid-template-columns: 1fr 1fr; gap: 8vw; }
@@ -257,8 +259,8 @@ h2 { font-size: clamp(3rem, 5vw, 5.3rem); letter-spacing: -.065em; line-height: 
 .gallery-row-image { min-height: 420px; overflow: hidden; border-radius: 24px; background: #e8e1d5; }
 .gallery-row-image img { width: 100%; height: 100%; object-fit: cover; transition: transform .7s cubic-bezier(.2,.8,.2,1); }
 .gallery-row:hover .gallery-row-image img { transform: scale(1.045); }
-.category-card--vases .gallery-row-image { background: var(--lavender); }
-.category-card--wall .gallery-row-image { background: var(--orange); }
+.category-card--portraits .gallery-row-image { background: var(--lavender); }
+.category-card--heritage .gallery-row-image { background: var(--orange); }
 
 .category-hero { min-height: calc(100vh - 92px); display: grid; grid-template-columns: .86fr 1.14fr; background: var(--ink); color: white; }
 .category-hero-copy { padding: 80px max(5vw, 44px); align-self: center; }
@@ -266,9 +268,9 @@ h2 { font-size: clamp(3rem, 5vw, 5.3rem); letter-spacing: -.065em; line-height: 
 .category-hero-copy h1 { font-size: clamp(5rem, 9vw, 9.4rem); margin: 28px 0 30px; }
 .category-hero-copy > p { max-width: 500px; line-height: 1.95; color: rgba(255,255,255,.65); margin-bottom: 34px; }
 .category-hero-image { position: relative; min-height: 720px; overflow: hidden; background: var(--acid); }
-.category-card--vases .category-hero-image { background: var(--lavender); }
-.category-card--wall .category-hero-image { background: var(--orange); }
-.category-hero-image img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; }
+.category-card--portraits .category-hero-image { background: var(--lavender); }
+.category-card--heritage .category-hero-image { background: var(--orange); }
+.category-hero-image img { width: 100%; height: 100%; object-fit: cover; }
 .category-hero-image > span { position: absolute; left: 25px; bottom: 24px; font: 800 .64rem Arial, sans-serif; color: var(--ink); letter-spacing: .12em; }
 .inner-products { padding-top: 130px; }
 .product-grid--category { grid-template-columns: minmax(0, .75fr) minmax(330px, 1.25fr); }
@@ -294,16 +296,13 @@ h2 { font-size: clamp(3rem, 5vw, 5.3rem); letter-spacing: -.065em; line-height: 
 .product-main-image { min-height: 660px; border-radius: 28px; overflow: hidden; position: relative; background: #e9e2d5; }
 .product-main-image.product-card--lavender { background: var(--lavender); }
 .product-main-image.product-card--orange { background: var(--orange); }
-.product-main-image img { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; transition: transform .5s, filter .5s, object-position .5s; }
-.product-main-image--detail img { transform: scale(1.7); object-position: 52% 46%; }
-.product-main-image--angle img { transform: scale(1.18) rotate(-5deg); object-position: 44% 50%; filter: contrast(1.06) saturate(.9); }
+.product-main-image img { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: contain; transition: opacity .22s, transform .45s; }
+.product-main-image.is-changing img { opacity: .25; transform: scale(1.015); }
 .product-image-label { position: absolute; left: 22px; top: 22px; z-index: 2; padding: 8px 12px; border-radius: 99px; background: rgba(243,240,232,.85); backdrop-filter: blur(8px); font: 700 .62rem Arial, sans-serif; }
 .gallery-hint { position: absolute; right: 22px; bottom: 22px; z-index: 2; font-size: .62rem; color: rgba(24,24,24,.66); }
-.product-thumbnails { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+.product-thumbnails { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 12px; margin-top: 12px; }
 .product-thumbnails button { aspect-ratio: 1.1; border: 1px solid transparent; border-radius: 15px; padding: 0; overflow: hidden; background: #e6dfd2; cursor: pointer; opacity: .62; transition: opacity .2s, border-color .2s; }
 .product-thumbnails button.is-active { opacity: 1; border-color: var(--ink); }
-.product-thumbnails button:nth-child(2) img { transform: scale(1.7); }
-.product-thumbnails button:nth-child(3) img { transform: scale(1.16) rotate(-5deg); }
 .product-thumbnails img { width: 100%; height: 100%; object-fit: cover; }
 .product-detail-copy { padding-top: 16px; }
 .back-link { font-size: .73rem; font-weight: 700; }

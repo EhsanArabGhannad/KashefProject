@@ -10,16 +10,29 @@ $serverRoot = Join-Path $distRoot "server"
 New-Item -ItemType Directory -Force $assetsRoot | Out-Null
 New-Item -ItemType Directory -Force $serverRoot | Out-Null
 
+$assetsRootFull = [System.IO.Path]::GetFullPath($assetsRoot) + [System.IO.Path]::DirectorySeparatorChar
+foreach ($generatedDirectory in @("gallery", "shop", "contact")) {
+    $targetDirectory = [System.IO.Path]::GetFullPath((Join-Path $assetsRoot $generatedDirectory))
+    if ($targetDirectory.StartsWith($assetsRootFull, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $targetDirectory)) {
+        Remove-Item -Recurse -Force -LiteralPath $targetDirectory
+    }
+}
+
 $pages = @(
     @{ Route = ""; Output = "index.html"; Depth = 0 },
     @{ Route = "gallery/"; Output = "gallery\index.html"; Depth = 1 },
-    @{ Route = "gallery/sculptures/"; Output = "gallery\sculptures\index.html"; Depth = 2 },
-    @{ Route = "gallery/vases/"; Output = "gallery\vases\index.html"; Depth = 2 },
-    @{ Route = "gallery/wall-art/"; Output = "gallery\wall-art\index.html"; Depth = 2 },
+    @{ Route = "gallery/calligraphy/"; Output = "gallery\calligraphy\index.html"; Depth = 2 },
+    @{ Route = "gallery/portraits/"; Output = "gallery\portraits\index.html"; Depth = 2 },
+    @{ Route = "gallery/heritage/"; Output = "gallery\heritage\index.html"; Depth = 2 },
     @{ Route = "shop/"; Output = "shop\index.html"; Depth = 1 },
-    @{ Route = "shop/wave-sculpture/"; Output = "shop\wave-sculpture\index.html"; Depth = 2 },
-    @{ Route = "shop/poly-vase/"; Output = "shop\poly-vase\index.html"; Depth = 2 },
-    @{ Route = "shop/persian-relief-panel/"; Output = "shop\persian-relief-panel\index.html"; Depth = 2 },
+    @{ Route = "shop/golden-calligraphy-panel/"; Output = "shop\golden-calligraphy-panel\index.html"; Depth = 2 },
+    @{ Route = "shop/royal-signature-panel/"; Output = "shop\royal-signature-panel\index.html"; Depth = 2 },
+    @{ Route = "shop/royal-calligraphy-panel/"; Output = "shop\royal-calligraphy-panel\index.html"; Depth = 2 },
+    @{ Route = "shop/shahbanu-portrait/"; Output = "shop\shahbanu-portrait\index.html"; Depth = 2 },
+    @{ Route = "shop/shahyad-tower-panel/"; Output = "shop\shahyad-tower-panel\index.html"; Depth = 2 },
+    @{ Route = "shop/lion-and-sun-panel/"; Output = "shop\lion-and-sun-panel\index.html"; Depth = 2 },
+    @{ Route = "shop/reza-shah-portrait/"; Output = "shop\reza-shah-portrait\index.html"; Depth = 2 },
+    @{ Route = "shop/ataturk-portrait/"; Output = "shop\ataturk-portrait\index.html"; Depth = 2 },
     @{ Route = "contact/"; Output = "contact\index.html"; Depth = 1 }
 )
 

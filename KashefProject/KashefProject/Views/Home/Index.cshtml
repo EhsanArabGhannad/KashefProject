@@ -7,7 +7,7 @@
         <div class="hero-copy reveal">
             <span class="eyebrow"><i></i> Made to order, never mass-produced</span>
             <h1>Objects unlike<br /><em>anyone else's.</em></h1>
-            <p>Distinctive decor and gifts, brought to life through 3D printing—one intentional layer at a time.</p>
+            <p>Distinctive dimensional wall art, brought to life through 3D printing—one intentional layer at a time.</p>
             <div class="hero-actions">
                 <a class="button button-dark" href="/shop/">Shop the collection <span>→</span></a>
                 <a class="text-link" href="/contact/">I have an idea <span>↘</span></a>
@@ -19,12 +19,12 @@
             </div>
         </div>
 
-        <div class="hero-art reveal" aria-label="3D-printed Wave sculpture">
+        <div class="hero-art reveal" aria-label="Golden Persian calligraphy wall panel">
             <span class="hero-orbit hero-orbit--one"></span>
             <span class="hero-orbit hero-orbit--two"></span>
-            <img class="hero-product-image" src="~/images/products/wave-sculpture.png" alt="Matte black Wave sculpture with visible 3D-print texture" />
-            <span class="art-label">LIMITED EDITION<br /><b>01 / 25</b></span>
-            <span class="material-chip">PLA<br />MATTE</span>
+            <img class="hero-product-image" src="~/images/products/collection/golden-calligraphy-03.jpg" alt="Golden Persian calligraphy wall panel in a modern interior" />
+            <span class="art-label">NEW COLLECTION<br /><b>WALL ART</b></span>
+            <span class="material-chip">GOLD<br />RELIEF</span>
             <span class="hero-sticker">MADE<br />LAYER BY LAYER</span>
         </div>
     </section>
@@ -39,20 +39,20 @@
             <h2 id="category-title">Find the piece<br /><em>that feels like you.</em></h2>
         </div>
         <div class="category-grid">
-            <a class="category-card category-card--wide reveal" href="/gallery/sculptures/">
-                <img src="~/images/products/wave-sculpture.png" alt="Modern 3D-printed sculptures" loading="lazy" />
+            <a class="category-card category-card--wide reveal" href="/gallery/calligraphy/">
+                <img src="~/images/products/collection/golden-calligraphy-03.jpg" alt="Gold Persian calligraphy wall panel" loading="lazy" />
                 <span class="category-number">01</span>
-                <div><small>SCULPTURAL OBJECTS</small><h3>Sculptures</h3><span>Explore category →</span></div>
+                <div><small>DIMENSIONAL SCRIPT</small><h3>Calligraphy</h3><span>Explore category →</span></div>
             </a>
-            <a class="category-card reveal" href="/gallery/vases/">
-                <img src="~/images/products/poly-vase.png" alt="Modern 3D-printed vases" loading="lazy" />
+            <a class="category-card reveal" href="/gallery/portraits/">
+                <img src="~/images/products/collection/shahbanu-portrait-01.jpg" alt="Gold Shahbanu portrait wall panel" loading="lazy" />
                 <span class="category-number">02</span>
-                <div><small>FUNCTIONAL FORMS</small><h3>Vases</h3><span>Explore category →</span></div>
+                <div><small>ICONS & FIGURES</small><h3>Portraits</h3><span>Explore category →</span></div>
             </a>
-            <a class="category-card reveal" href="/gallery/wall-art/">
-                <img src="~/images/products/gol-frame.png" alt="3D-printed wall art and relief panels" loading="lazy" />
+            <a class="category-card reveal" href="/gallery/heritage/">
+                <img src="~/images/products/collection/lion-sun-01.jpg" alt="Gold Lion and Sun heritage wall panel" loading="lazy" />
                 <span class="category-number">03</span>
-                <div><small>ART FOR YOUR WALLS</small><h3>Wall Art</h3><span>Explore category →</span></div>
+                <div><small>SYMBOLS WITH A STORY</small><h3>Heritage</h3><span>Explore category →</span></div>
             </a>
         </div>
     </section>
@@ -67,7 +67,7 @@
         </div>
 
         <div class="product-grid">
-            @foreach (var product in StoreCatalog.Products)
+            @foreach (var product in StoreCatalog.FeaturedProducts)
             {
                 <partial name="_ProductCard" model="product" />
             }
@@ -77,8 +77,8 @@
     <section class="custom-section" id="custom">
         <div class="custom-copy reveal">
             <span class="eyebrow eyebrow--light"><i></i> Made for you</span>
-            <h2>Pick the color.<br /><em>We'll make the object.</em></h2>
-            <p>Start with one of our forms, then make it yours with a custom color, size, or personal detail.</p>
+            <h2>Pick the finish.<br /><em>We'll make the artwork.</em></h2>
+            <p>Start with one of our designs, then make it yours with a custom finish, size, frame, or personal detail.</p>
             <div class="option-group">
                 <span>CHOOSE A COLOR</span>
                 <div class="swatches" aria-label="Choose a product color">
@@ -94,11 +94,11 @@
         <div class="custom-preview reveal" style="--piece-color:#c9ff3d">
             <span class="preview-number">01</span>
             <span class="preview-note">COLOR PREVIEW</span>
-            <div class="custom-vase" aria-label="3D-printed vase color preview">
-                <span></span><span></span><span></span><span></span><span></span>
+            <div class="custom-art-preview" aria-label="Framed dimensional wall art preview">
+                <img src="~/images/products/collection/royal-calligraphy-04.jpg" alt="Royal calligraphy panel preview" />
             </div>
             <div class="preview-meta">
-                <span>FORM: RHYTHM</span><span>SIZE: MEDIUM</span><span>MATERIAL: PLA+</span>
+                <span>SERIES: CALLIGRAPHY</span><span>SIZE: CUSTOM</span><span>FINISH: GOLD</span>
             </div>
         </div>
     </section>

@@ -103,15 +103,15 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const galleryMain = document.querySelector("[data-gallery-main]");
+  const galleryMainImage = document.querySelector("[data-gallery-main-image]");
   const galleryLabel = document.querySelector("[data-view-label]");
-  document.querySelectorAll("[data-gallery-view]").forEach((button) => {
+  document.querySelectorAll("[data-gallery-image]").forEach((button) => {
     button.addEventListener("click", () => {
-      document.querySelectorAll("[data-gallery-view]").forEach((item) => item.classList.remove("is-active"));
+      document.querySelectorAll("[data-gallery-image]").forEach((item) => item.classList.remove("is-active"));
       button.classList.add("is-active");
-      if (galleryMain) {
-        galleryMain.classList.remove("product-main-image--front", "product-main-image--detail", "product-main-image--angle");
-        galleryMain.classList.add(`product-main-image--${button.dataset.galleryView}`);
-      }
+      if (galleryMainImage && button.dataset.galleryImage) galleryMainImage.src = button.dataset.galleryImage;
+      galleryMain?.classList.add("is-changing");
+      setTimeout(() => galleryMain?.classList.remove("is-changing"), 220);
       if (galleryLabel) galleryLabel.textContent = button.dataset.galleryLabel || "PRODUCT VIEW";
     });
   });
