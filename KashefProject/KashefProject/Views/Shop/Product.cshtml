@@ -2,7 +2,8 @@
 @{
     ViewData["Title"] = Model.Name;
     ViewData["Description"] = Model.Description;
-    ViewData["OgImage"] = $"https://ehsanarabghannad.github.io/KashefProject{Model.ImagePath}";
+    var publicUrl = Configuration["Site:PublicUrl"]?.TrimEnd('/') ?? "https://craftisma.net";
+    ViewData["OgImage"] = $"{publicUrl}{Model.ImagePath}";
 }
 
 <main>
