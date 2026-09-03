@@ -1,0 +1,45 @@
+@model IReadOnlyList<CatalogProduct>
+@{
+    ViewData["Title"] = "Products";
+}
+
+<div class="admin-page-heading">
+    <div><span class="admin-eyebrow">STORE CATALOG</span><h1>Products</h1><p>Manage the pieces customers can see and purchase.</p></div>
+    <a class="admin-primary" href="/admin/products/create">Add product <span>＋</span></a>
+</div>
+
+@if (TempData["StatusMessage"] is string message)
+{
+    <div class="admin-notice" role="status">@message</div>
+}
+
+<div class="product-admin-list">
+    @foreach (var product in Model)
+    {
+        var image = product.Images.OrderBy(item => item.SortOrder).FirstOrDefault();
+        <article class="product-admin-row">
+            <div class="product-admin-image">
+                @if (image is not null)
+                {
+                    <img src="@image.ImagePath" alt="" />
+                }
+            </div>
+            <div class="product-admin-copy">
+                <div><h2>@product.Name</h2><span>@product.Category.Name</span></div>
+                <p>@(product.PriceCents is null ? "Price not set" : $"${product.PriceCents.Value / 100m:N2}")</p>
+            </div>
+            <div class="product-admin-state">
+                <span class="@(product.IsPublished ? "state-live" : "state-hidden")">@(product.IsPublished ? "Live" : "Hidden")</span>
+                @if (product.IsFeatured) { <span>Featured</span> }
+            </div>
+            <div class="product-admin-actions">
+                <a href="/shop/@product.Slug/" target="_blank" rel="noopener">View</a>
+                <a class="edit" href="/admin/products/@product.Id/edit">Edit</a>
+                <form method="post" action="/admin/products/@product.Id/delete" onsubmit="return confirm('Delete @product.Name? This cannot be undone.');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit">Delete</button>
+                </form>
+            </div>
+        </article>
+    }
+</div>

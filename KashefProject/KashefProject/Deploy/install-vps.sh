@@ -20,6 +20,7 @@ if ! id -u craftisma >/dev/null 2>&1; then
 fi
 
 install -d -m 0755 "${app_root}/releases" "${release_dir}"
+install -d -m 0750 -o craftisma -g craftisma /var/lib/craftisma /var/lib/craftisma/uploads
 tar -xzf "${archive_path}" -C "${release_dir}"
 chmod 0755 "${release_dir}/KashefProject"
 chown -R root:root "${release_dir}"
@@ -44,22 +45,40 @@ SyslogIdentifier=craftisma
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
 Environment=DOTNET_NOLOGO=true
+Environment="ConnectionStrings__DefaultConnection=Data Source=/var/lib/craftisma/craftisma.db"
+Environment=Storage__UploadRoot=/var/lib/craftisma/uploads
+Environment=Storage__DataProtectionRoot=/var/lib/craftisma/keys
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=true
 ProtectSystem=full
+ReadWritePaths=/var/lib/craftisma
 
 [Install]
 WantedBy=multi-user.target
 UNIT
 
+if [[ -f /etc/letsencrypt/live/craftisma.net/fullchain.pem ]]; then
 cat > /etc/nginx/sites-available/craftisma <<'NGINX'
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name craftisma.net www.craftisma.net _;
 
-    client_max_body_size 10m;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    server_name craftisma.net www.craftisma.net;
+
+    ssl_certificate /etc/letsencrypt/live/craftisma.net/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/craftisma.net/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    client_max_body_size 40m;
 
     location / {
         proxy_pass http://127.0.0.1:5000;
@@ -78,6 +97,33 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
 }
 NGINX
+else
+cat > /etc/nginx/sites-available/craftisma <<'NGINX'
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name craftisma.net www.craftisma.net _;
+
+    client_max_body_size 40m;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+}
+NGINX
+fi
 
 systemctl daemon-reload
 systemctl enable --now craftisma

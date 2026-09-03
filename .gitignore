@@ -44,6 +44,12 @@ ScaffoldingReadMe.txt
 # Local deployment credentials
 data.txt
 
+# Local store data and uploaded product images
+App_Data/
+*.db
+*.db-shm
+*.db-wal
+
 # Others
 ~$*
 *~

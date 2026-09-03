@@ -1,3 +1,4 @@
+@model IReadOnlyList<Product>
 @{
     ViewData["Title"] = "Objects unlike anyone else's";
 }
@@ -67,7 +68,7 @@
         </div>
 
         <div class="product-grid">
-            @foreach (var product in StoreCatalog.FeaturedProducts)
+            @foreach (var product in Model)
             {
                 <partial name="_ProductCard" model="product" />
             }

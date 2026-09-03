@@ -1,0 +1,29 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+
+<section class="login-panel">
+    <div>
+        <span class="admin-eyebrow">PRIVATE STORE MANAGEMENT</span>
+        <h1>Welcome back.</h1>
+        <p>Sign in to manage products, pricing, and store visibility.</p>
+    </div>
+    <form method="post" action="/admin/login" class="admin-form">
+        @Html.AntiForgeryToken()
+        <input asp-for="ReturnUrl" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+        <label>
+            <span>Email address</span>
+            <input asp-for="Email" autocomplete="username" autofocus />
+            <span asp-validation-for="Email" class="field-error"></span>
+        </label>
+        <label>
+            <span>Password</span>
+            <input asp-for="Password" autocomplete="current-password" />
+            <span asp-validation-for="Password" class="field-error"></span>
+        </label>
+        <label class="check-row"><input asp-for="RememberMe" /> <span>Keep me signed in on this device</span></label>
+        <button class="admin-primary" type="submit">Sign in <span>→</span></button>
+    </form>
+</section>

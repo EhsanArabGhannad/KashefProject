@@ -1,24 +1,19 @@
 using KashefProject.Models;
+using KashefProject.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KashefProject.Controllers;
 
 [Route("gallery")]
-public class GalleryController : Controller
+public class GalleryController(ICatalogService catalog) : Controller
 {
     [HttpGet("")]
-    public IActionResult Index() => View(StoreCatalog.Categories);
+    public async Task<IActionResult> Index() => View(await catalog.GetCategoriesAsync());
 
     [HttpGet("{slug}")]
-    public IActionResult Category(string slug)
+    public async Task<IActionResult> Category(string slug)
     {
-        var category = StoreCatalog.FindCategory(slug);
-        if (category is null)
-        {
-            return NotFound();
-        }
-
-        var products = StoreCatalog.Products.Where(product => product.CategorySlug == category.Slug).ToArray();
-        return View(new CategoryPageViewModel(category, products));
+        var category = await catalog.FindCategoryAsync(slug);
+        return category is null ? NotFound() : View(category);
     }
 }
