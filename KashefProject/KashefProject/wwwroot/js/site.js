@@ -37,56 +37,10 @@ document.addEventListener("DOMContentLoaded", () => {
     toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2400);
   };
 
-  let cart = [];
-  try {
-    const savedCart = JSON.parse(localStorage.getItem("craftisma-cart") || "[]");
-    if (Array.isArray(savedCart)) cart = savedCart.slice(0, 20);
-  } catch {
-    cart = [];
-  }
-  const cartCount = document.querySelector("[data-cart-count]");
-  const cartItems = document.querySelector("[data-cart-items]");
-  const cartDrawer = document.querySelector(".cart-drawer");
-
-  const renderCart = () => {
-    if (!cartItems || !cartCount) return;
-    cartCount.textContent = String(cart.length);
-    localStorage.setItem("craftisma-cart", JSON.stringify(cart));
-    if (!cart.length) {
-      cartItems.innerHTML = '<div class="empty-cart"><span>0</span><h3>Your bag is empty</h3><p>Pick something distinctive to get started.</p></div>';
-      return;
-    }
-    cartItems.innerHTML = cart.map((item, index) => `
-      <div class="cart-line">
-        <div><strong>${item.name}</strong><span>${item.price}</span></div>
-        <b>${index + 1}</b>
-      </div>`).join("");
-  };
-
-  const openCart = () => {
-    document.body.classList.add("drawer-open");
-    cartDrawer?.setAttribute("aria-hidden", "false");
-  };
-  const closeCart = () => {
-    document.body.classList.remove("drawer-open");
-    cartDrawer?.setAttribute("aria-hidden", "true");
-  };
-
-  document.querySelectorAll("[data-cart-open]").forEach((button) => button.addEventListener("click", openCart));
-  document.querySelectorAll("[data-cart-close]").forEach((button) => button.addEventListener("click", closeCart));
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
-      closeCart();
       closeNavigation();
     }
-  });
-
-  document.querySelectorAll("[data-add]").forEach((button) => {
-    button.addEventListener("click", () => {
-      cart.push({ name: button.dataset.add, price: button.dataset.price });
-      renderCart();
-      showToast(`${button.dataset.add} was added to your bag.`);
-    });
   });
 
   const preview = document.querySelector(".custom-preview");
@@ -125,5 +79,4 @@ document.addEventListener("DOMContentLoaded", () => {
     showToast("Thanks — your demo inquiry is ready to send.");
   });
 
-  renderCart();
 });

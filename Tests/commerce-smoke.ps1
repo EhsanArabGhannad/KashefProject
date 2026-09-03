@@ -1,0 +1,117 @@
+param(
+    [string]$BaseUrl = 'http://127.0.0.1:5190',
+    [Parameter(Mandatory)][string]$AdminEmail,
+    [Parameter(Mandatory)][string]$AdminPassword
+)
+$ErrorActionPreference = 'Stop'
+if (([uri]$BaseUrl).Host -notin @('127.0.0.1', 'localhost')) { throw 'This test creates local test orders. Only run against localhost.' }
+function Assert($condition, $label) { if (!$condition) { throw "FAIL: $label" }; Write-Output "PASS: $label" }
+function Token($html) { [regex]::Match($html, 'name="__RequestVerificationToken" type="hidden" value="([^"]+)"').Groups[1].Value }
+function Review($html) { [System.Net.WebUtility]::HtmlDecode([regex]::Match($html, 'id="ReviewToken"[^>]*value="([^"]+)"').Groups[1].Value) }
+function Get-Page($path, $session) { Invoke-WebRequest ($BaseUrl + $path) -WebSession $session -SkipHttpErrorCheck }
+function Post-Page($path, $body, $session) { Invoke-WebRequest ($BaseUrl + $path) -Method Post -Body $body -WebSession $session -SkipHttpErrorCheck }
+$admin = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$buyer = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$stranger = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$login = Get-Page '/admin/login' $admin
+$signedIn = Post-Page '/admin/login' @{ Email=$AdminEmail; Password=$AdminPassword; __RequestVerificationToken=(Token $login.Content) } $admin
+Assert ($signedIn.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/admin/products') 'admin login'
+$suffix = [Guid]::NewGuid().ToString('N').Substring(0, 8)
+$name = 'Commerce Smoke ' + $suffix
+$slug = 'commerce-smoke-' + $suffix
+$editor = Get-Page '/admin/products/create' $admin
+$form = @{
+    Name=$name; Slug=$slug; CategoryId='1'; PriceDollars='19.95'; ShortDescription='Local commerce smoke test.';
+    Description='Temporary test product.'; Size='Test size'; Material='Test material'; Finish='Test gold'; Badge='TEST';
+    CardClass='product-card--cream'; HighlightsText='Test'; IsFeatured='false'; IsPublished='true'; DisplayOrder='999';
+    __RequestVerificationToken=(Token $editor.Content);
+    NewImages=(Get-Item (Join-Path $PSScriptRoot '../KashefProject/KashefProject/wwwroot/images/products/collection/shahyad-tower-02.jpg'))
+}
+$created = Invoke-WebRequest ($BaseUrl + '/admin/products/create') -Method Post -Form $form -WebSession $admin
+$block = [regex]::Match($created.Content, '(?s)<article class="product-admin-row">(?:(?!</article>).)*' + $name + '(?:(?!</article>).)*</article>').Value
+$id = [regex]::Match($block, '/admin/products/(\d+)/edit').Groups[1].Value
+Assert (![string]::IsNullOrEmpty($id)) 'priced test product created'
+$orderId = $null
+try {
+    $product = Get-Page ("/shop/$slug/") $buyer
+    $csrf = Token $product.Content
+    Assert (![string]::IsNullOrEmpty($csrf)) 'buy form has CSRF protection'
+    $blocked = Post-Page '/cart/add' @{productId=$id; quantity='2'} $buyer
+    Assert ([int]$blocked.StatusCode -eq 400) 'missing CSRF rejected'
+    $unpriced = Post-Page '/cart/add' @{productId='1'; quantity='1'; __RequestVerificationToken=$csrf} $buyer
+    Assert ($unpriced.Content.Contains('not available to order') -and $unpriced.Content.Contains('Your bag is empty')) 'unpriced catalog pieces cannot be ordered'
+    $bad = Post-Page '/cart/add' @{productId=$id; quantity='21'; __RequestVerificationToken=$csrf} $buyer
+    Assert ($bad.Content.Contains('Your bag is empty')) 'quantity limit enforced'
+    $bag = Post-Page '/cart/add' @{productId=$id; quantity='2'; price='0.01'; __RequestVerificationToken=$csrf} $buyer
+    Assert ($bag.Content.Contains('$39.90')) 'server price overrides client price'
+    $removed = Post-Page '/cart/update' @{productId=$id; quantity='0'; __RequestVerificationToken=(Token $bag.Content)} $buyer
+    Assert ($removed.Content.Contains('Your bag is empty')) 'items can be removed'
+    $bag = Post-Page '/cart/add' @{productId=$id; quantity='2'; __RequestVerificationToken=$csrf} $buyer
+    Assert ((Get-Page '/cart/' $stranger).Content.Contains('Your bag is empty')) 'carts isolated between visitors'
+    $badUpdate = Post-Page '/cart/update' @{productId=$id; quantity='-1'; __RequestVerificationToken=(Token $bag.Content)} $buyer
+    Assert ($badUpdate.Content.Contains('$39.90')) 'negative quantity rejected'
+    $checkout = Get-Page '/checkout/' $buyer
+    $review = Review $checkout.Content
+    Assert (![string]::IsNullOrEmpty($review)) 'signed checkout review generated'
+    $details = @{FullName='Local Test Customer';Email='buyer@example.com';AddressLine1='123 Test Street';City='Los Angeles';State='CA';PostalCode='90001';AcknowledgePending='true';ReviewToken=$review;__RequestVerificationToken=(Token $checkout.Content);SubtotalCents='1';Country='ZZ';Status='Paid'}
+    $invalidDetails = $details.Clone(); $invalidDetails.Email='invalid'; $invalidDetails.State='ZZ'
+    $invalid = Post-Page '/checkout/' $invalidDetails $buyer
+    Assert ($invalid.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/checkout/' -and $invalid.Content.Contains('valid US state')) 'invalid customer information rejected'
+
+    $editor = Get-Page ("/admin/products/$id/edit") $admin
+    $form.Remove('NewImages'); $form.Id=$id; $form.PriceDollars='24.95'; $form.__RequestVerificationToken=Token $editor.Content
+    Post-Page ("/admin/products/$id/edit") $form $admin | Out-Null
+    $changed = Post-Page '/checkout/' $details $buyer
+    Assert ($changed.Content.Contains('details have changed') -and $changed.Content.Contains('$49.90')) 'price changes require a fresh review'
+    $details.ReviewToken = Review $changed.Content; $details.__RequestVerificationToken=Token $changed.Content
+    $tampered = $details.Clone(); $tampered.ReviewToken='invalid-token'
+    $rejected = Post-Page '/checkout/' $tampered $buyer
+    Assert ($rejected.Content.Contains('review is invalid')) 'tampered checkout review rejected'
+    $details.ReviewToken=Review $rejected.Content; $details.__RequestVerificationToken=Token $rejected.Content
+
+    # Send the same approved review twice concurrently. Both must resolve to one order.
+    $handler = [System.Net.Http.HttpClientHandler]::new(); $handler.CookieContainer=$buyer.Cookies
+    $client = [System.Net.Http.HttpClient]::new($handler)
+    try {
+        $pairs = [System.Collections.Generic.Dictionary[string,string]]::new()
+        foreach ($key in $details.Keys) { $pairs[$key]=[string]$details[$key] }
+        $firstContent=[System.Net.Http.FormUrlEncodedContent]::new($pairs)
+        $secondContent=[System.Net.Http.FormUrlEncodedContent]::new($pairs)
+        $firstTask=$client.PostAsync(($BaseUrl+'/checkout/'),$firstContent)
+        $secondTask=$client.PostAsync(($BaseUrl+'/checkout/'),$secondContent)
+        $first=$firstTask.GetAwaiter().GetResult(); $second=$secondTask.GetAwaiter().GetResult()
+        $savedPath=$first.RequestMessage.RequestUri.AbsolutePath
+        Assert ($savedPath.StartsWith('/checkout/saved/') -and $savedPath -eq $second.RequestMessage.RequestUri.AbsolutePath) 'concurrent submissions create only one order'
+        $savedHtml=$first.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+        Assert ($savedHtml.Contains('$49.90') -and $savedHtml.Contains('Pending payment')) 'subtotal and unpaid status are server controlled'
+    } finally { $client.Dispose() }
+    Assert ((Get-Page '/cart/' $buyer).Content.Contains('Your bag is empty')) 'successful save clears the bag'
+    Assert ([int](Get-Page $savedPath $stranger).StatusCode -eq 404) 'another visitor cannot read the order'
+    $retry=Post-Page '/checkout/' $details $buyer
+    Assert ($retry.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq $savedPath) 'retry after cart clearing is idempotent'
+    $reference=$savedPath.Split('/')[-1]
+    $orders=Get-Page '/admin/orders' $admin
+    $orderId=[regex]::Match($orders.Content, 'href="/admin/orders/(\d+)"><h2>' + $reference).Groups[1].Value
+    Assert (![string]::IsNullOrEmpty($orderId)) 'saved order appears in admin'
+    $order=Get-Page ("/admin/orders/$orderId") $admin
+    Assert ($order.Content.Contains('buyer@example.com') -and $order.Content.Contains('United States') -and $order.Content.Contains('$49.90')) 'admin can read delivery and amount snapshots'
+    Assert ((Get-Page '/admin/orders' $stranger).BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/admin/login') 'order administration requires authentication'
+
+    # Put a product in another bag, then unpublish it.
+    $anotherProduct=Get-Page ("/shop/$slug/") $stranger
+    Post-Page '/cart/add' @{productId=$id;quantity='1';__RequestVerificationToken=(Token $anotherProduct.Content)} $stranger | Out-Null
+    $editor=Get-Page ("/admin/products/$id/edit") $admin
+    $form.PriceDollars='99.95'; $form.IsPublished='false'; $form.Name=$name+' changed'; $form.__RequestVerificationToken=Token $editor.Content
+    Post-Page ("/admin/products/$id/edit") $form $admin | Out-Null
+    $unavailable=Get-Page '/checkout/' $stranger
+    Assert ($unavailable.BaseResponse.RequestMessage.RequestUri.AbsolutePath.TrimEnd('/') -eq '/cart' -and $unavailable.Content.Contains('Unavailable')) 'unpublished products cannot be ordered'
+    $order=Get-Page ("/admin/orders/$orderId") $admin
+    Assert ($order.Content.Contains('$49.90') -and !$order.Content.Contains($name+' changed')) 'order snapshots survive catalog edits'
+    Post-Page ("/admin/orders/$orderId/cancel") @{__RequestVerificationToken=(Token $order.Content)} $admin | Out-Null
+    Assert ((Get-Page $savedPath $buyer).Content.Contains('Cancelled')) 'admin cancellation reflected to order owner'
+} finally {
+    $adminList=Get-Page '/admin/products' $admin
+    Post-Page ("/admin/products/$id/delete") @{__RequestVerificationToken=(Token $adminList.Content)} $admin | Out-Null
+    if ($orderId) { Assert ([int](Get-Page ("/admin/orders/$orderId") $admin).StatusCode -eq 200) 'order retained after product deletion' }
+    Write-Output 'Temporary product and uploaded image cleaned up. Test order remains only in the local test database.'
+}

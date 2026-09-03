@@ -1,0 +1,47 @@
+@model CartSummary
+@{ ViewData["Title"] = "Your bag"; }
+<main class="commerce-shell">
+    <a class="back-link" href="/shop/">← Continue shopping</a>
+    <div class="commerce-heading"><span>YOUR COLLECTION</span><h1>Your bag<span>.</span></h1><p>@Model.Count item@(Model.Count == 1 ? "" : "s") · USD</p></div>
+    @if (TempData["CartMessage"] is string message) { <p class="commerce-notice" role="status">@message</p> }
+    @if (TempData["CartError"] is string error) { <p class="commerce-notice commerce-error" role="alert">@error</p> }
+    @if (Model.Lines.Count == 0)
+    {
+        <section class="commerce-empty"><h2>A little room for something special.</h2><p>Your bag is empty. Explore the collection to find your piece.</p><a class="button button-dark" href="/shop/">Explore the collection <span>↗</span></a></section>
+    }
+    else
+    {
+        <div class="commerce-grid">
+            <section aria-label="Items in your bag" class="bag-lines">
+                @foreach (var line in Model.Lines)
+                {
+                    <article class="bag-line">
+                        @if (line.ImagePath is not null) { <img src="@line.ImagePath" alt="@line.Name" /> }
+                        <div class="bag-line-copy">
+                            <h2>@if (line.Available) { <a href="/shop/@line.Slug/">@line.Name</a> } else { @line.Name }</h2>
+                            <p>@line.Finish</p>
+                            <strong>@(line.Available ? StoreMoney.Format(line.UnitPriceCents!.Value) + " each" : "Unavailable — remove to continue")</strong>
+                            <form method="post" action="/cart/update" class="quantity-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="productId" value="@line.ProductId" />
+                                <label for="qty-@line.ProductId">Quantity</label>
+                                <input id="qty-@line.ProductId" name="quantity" type="number" min="1" max="20" value="@line.Quantity" required />
+                                <button type="submit">Update</button>
+                            </form>
+                            <form method="post" action="/cart/update">@Html.AntiForgeryToken()<input type="hidden" name="productId" value="@line.ProductId" /><input type="hidden" name="quantity" value="0" /><button class="text-button" type="submit" aria-label="Remove @line.Name">Remove</button></form>
+                        </div>
+                        <strong class="bag-line-total">@(line.Available ? StoreMoney.Format(line.LineTotalCents) : "—")</strong>
+                    </article>
+                }
+            </section>
+            <aside class="commerce-summary">
+                <span class="commerce-eyebrow">ORDER SUMMARY</span>
+                <div class="summary-total"><span>Item subtotal</span><strong>@StoreMoney.Format(Model.SubtotalCents)</strong></div>
+                <p>Shipping and taxes are not included. The final amount will be confirmed before payment.</p>
+                @if (Model.CanCheckout) { <a class="button button-dark" href="/checkout/">Review your order <span>→</span></a> }
+                else { <p class="commerce-error">Remove unavailable pieces to continue.</p> }
+                <small>Online payments are not available yet. No payment is taken when you save an order.</small>
+            </aside>
+        </div>
+    }
+</main>

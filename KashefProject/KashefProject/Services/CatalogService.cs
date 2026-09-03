@@ -68,7 +68,7 @@ public sealed class CatalogService(StoreDbContext db) : ICatalogService
     }
 
     private IQueryable<CatalogProduct> ProductQuery() => db.Products.AsNoTracking()
-        .Where(product => product.IsPublished)
+        .Where(product => product.IsPublished && product.Category.IsPublished)
         .Include(product => product.Category)
         .Include(product => product.Images.OrderBy(image => image.SortOrder));
 
@@ -109,6 +109,7 @@ public sealed class CatalogService(StoreDbContext db) : ICatalogService
             product.Badge,
             product.CardClass,
             product.HighlightsText
-                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        { Id = product.Id, PriceCents = product.PriceCents };
     }
 }

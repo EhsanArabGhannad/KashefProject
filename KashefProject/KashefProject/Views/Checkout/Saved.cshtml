@@ -1,0 +1,13 @@
+@model KashefProject.Data.StoreOrder
+@{ ViewData["Title"] = "Order status"; }
+<main class="commerce-shell">
+    <div class="commerce-heading"><span>YOUR ORDER</span><h1>@(Model.Status == KashefProject.Data.OrderStatus.Cancelled ? "Order cancelled" : "Order saved")<span>.</span></h1><p class="order-reference">Reference @Model.Reference</p></div>
+    <span class="order-status">@(Model.Status == KashefProject.Data.OrderStatus.Cancelled ? "Cancelled · not paid" : "Pending payment · not confirmed")</span>
+    <div class="commerce-grid" style="margin-top:32px">
+        <section><h2>No payment has been taken.</h2><p style="line-height:1.8;margin:20px 0">Your order details have been saved. This is not a payment receipt or a confirmed purchase. Shipping, taxes and the final amount must be confirmed before payment and production.</p><p>Keep your order reference for any questions.</p><a class="button button-dark" style="margin-top:28px" href="/shop/">Back to the collection <span>↗</span></a></section>
+        <aside class="commerce-summary"><span class="commerce-eyebrow">SAVED ORDER · USD</span>
+            @foreach (var line in Model.Lines) { <div class="commerce-mini-line"><span>@line.ProductName × @line.Quantity</span><strong>@StoreMoney.Format(line.UnitPriceCents * line.Quantity)</strong></div> }
+            <div class="summary-total"><span>Item subtotal</span><strong>@StoreMoney.Format(Model.SubtotalCents)</strong></div><p>Shipping and tax: not calculated.</p>
+        </aside>
+    </div>
+</main>

@@ -17,6 +17,8 @@ public sealed record Product(
     string CardClass,
     IReadOnlyList<string> Highlights)
 {
+    public int Id { get; init; }
+    public long? PriceCents { get; init; }
     public string ImagePath => Images[0];
 }
 

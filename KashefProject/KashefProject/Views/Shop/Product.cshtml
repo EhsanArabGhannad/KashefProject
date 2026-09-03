@@ -34,18 +34,23 @@
 
             <div class="product-options">
                 <div class="product-finish-note">
-                    <span>SELECT A FINISH</span>
-                    <div class="swatches swatches--light" aria-label="Choose a product color">
-                        <button class="swatch is-active" type="button" data-color-name="Classic gold" style="--swatch:#c78b18" aria-label="Classic gold"></button>
-                        <button class="swatch" type="button" data-color-name="Antique gold" style="--swatch:#8e6b32" aria-label="Antique gold"></button>
-                        <button class="swatch" type="button" data-color-name="Warm ivory" style="--swatch:#eee6d7" aria-label="Warm ivory"></button>
-                        <button class="swatch" type="button" data-color-name="Charcoal" style="--swatch:#2b2a27" aria-label="Charcoal"></button>
-                    </div>
-                    <small data-selected-color>Classic gold</small>
+                    <span>FINISH</span>
+                    <span>@Model.Finish</span>
                 </div>
             </div>
 
-            <button class="button button-dark product-add" type="button" data-add="@Model.Name" data-price="@Model.Price">Add to bag <span>→</span></button>
+            @if (Model.PriceCents > 0)
+            {
+                <form class="product-buy-form" method="post" action="/cart/add">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="productId" value="@Model.Id" />
+                    <button class="button button-dark product-add" type="submit">Add to bag <span>→</span></button>
+                </form>
+            }
+            else
+            {
+                <a class="button button-dark product-add" href="/contact/">Request pricing <span>→</span></a>
+            }
 
             <dl class="product-specs">
                 <div><dt>Size</dt><dd>@Model.Size</dd></div>

@@ -1,0 +1,12 @@
+@model StoreOrder
+@{ ViewData["Title"] = Model.Reference; }
+<div class="editor-heading"><a href="/admin/orders">← All orders</a><h1>@Model.Reference</h1><p>@Model.CreatedUtc.ToString("yyyy-MM-dd HH:mm") UTC · @(Model.Status == OrderStatus.Cancelled ? "Cancelled" : "Pending payment")</p></div>
+<section class="editor-card"><h2>Payment not received</h2><p>Do not fulfill this order. Shipping, tax, and the final payable total have not been calculated.</p><strong>Item subtotal: @KashefProject.Models.StoreMoney.Format(Model.SubtotalCents) USD</strong></section>
+<section class="editor-card"><h2>Customer & delivery</h2><p>@Model.FullName<br />@Model.Email<br />@Model.Phone</p><p>@Model.AddressLine1<br />@Model.AddressLine2<br />@Model.City, @Model.State @Model.PostalCode<br />United States</p></section>
+<section class="editor-card"><h2>Ordered pieces</h2><p>These details are saved with the order and do not change when products are edited.</p>
+    @foreach (var line in Model.Lines) { <article style="border-top:1px solid #ccc;padding:18px 0"><h3>@line.ProductName</h3><p>@line.Size · @line.Finish</p><p>@line.Quantity × @KashefProject.Models.StoreMoney.Format(line.UnitPriceCents) = @KashefProject.Models.StoreMoney.Format(line.Quantity * line.UnitPriceCents)</p></article> }
+</section>
+@if (Model.Status == OrderStatus.PendingPayment)
+{
+    <form method="post" action="/admin/orders/@Model.Id/cancel" onsubmit="return confirm('Cancel this unpaid order?');">@Html.AntiForgeryToken()<button class="admin-primary" type="submit">Cancel unpaid order</button></form>
+}

@@ -7,7 +7,10 @@
             <img src="@Model.ImagePath" alt="@Model.ImageAlt" loading="lazy" />
             <span class="product-view">View piece ↗</span>
         </a>
-        <button class="quick-add" type="button" data-add="@Model.Name" data-price="@Model.Price" aria-label="Add @Model.Name to bag">＋</button>
+        @if (Model.PriceCents > 0)
+        {
+            <form method="post" action="/cart/add">@Html.AntiForgeryToken()<input type="hidden" name="productId" value="@Model.Id" /><button class="quick-add" type="submit" aria-label="Add @Model.Name to bag">＋</button></form>
+        }
     </div>
     <a class="product-info" href="/shop/@Model.Slug/" aria-label="View @Model.Name details">
         <div><h3>@Model.Name</h3><p>@Model.ShortDescription</p></div>

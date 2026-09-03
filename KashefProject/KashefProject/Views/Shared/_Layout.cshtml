@@ -1,4 +1,5 @@
 @{
+    Context.Response.Headers.CacheControl = "no-store";
     var pageTitle = ViewData["Title"]?.ToString() ?? "Objects unlike anyone else's";
     var pageDescription = ViewData["Description"]?.ToString() ?? "Craftisma creates distinctive dimensional wall art, made one layer at a time.";
     var publicUrl = Configuration["Site:PublicUrl"]?.TrimEnd('/') ?? "https://craftisma.net";
@@ -9,6 +10,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    @if (Context.Request.Path.StartsWithSegments("/cart") || Context.Request.Path.StartsWithSegments("/checkout")) { <meta name="robots" content="noindex,nofollow" /><meta name="referrer" content="no-referrer" /> }
     <meta name="theme-color" content="#f4f1ea" />
     <meta name="description" content="@pageDescription" />
     <meta property="og:type" content="website" />
@@ -25,12 +27,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/commerce.css" asp-append-version="true" />
 </head>
 <body>
     <partial name="_SiteHeader" />
     @RenderBody()
     <partial name="_SiteFooter" />
-    <partial name="_CartDrawer" />
+    <div class="toast" role="status" aria-live="polite" data-toast></div>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
