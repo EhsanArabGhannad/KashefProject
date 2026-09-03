@@ -20,7 +20,7 @@ if ! id -u craftisma >/dev/null 2>&1; then
 fi
 
 install -d -m 0755 "${app_root}/releases" "${release_dir}"
-install -d -m 0750 -o craftisma -g craftisma /var/lib/craftisma /var/lib/craftisma/uploads
+install -d -m 0750 -o craftisma -g craftisma /var/lib/craftisma /var/lib/craftisma/uploads /var/lib/craftisma/keys
 tar -xzf "${archive_path}" -C "${release_dir}"
 chmod 0755 "${release_dir}/KashefProject"
 chown -R root:root "${release_dir}"
@@ -48,6 +48,7 @@ Environment=DOTNET_NOLOGO=true
 Environment="ConnectionStrings__DefaultConnection=Data Source=/var/lib/craftisma/craftisma.db"
 Environment=Storage__UploadRoot=/var/lib/craftisma/uploads
 Environment=Storage__DataProtectionRoot=/var/lib/craftisma/keys
+EnvironmentFile=-/run/craftisma-bootstrap/admin.env
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=true
@@ -126,7 +127,8 @@ NGINX
 fi
 
 systemctl daemon-reload
-systemctl enable --now craftisma
+systemctl enable craftisma
+systemctl restart craftisma
 
 for attempt in {1..20}; do
   if curl --fail --silent --show-error http://127.0.0.1:5000/ >/dev/null; then
