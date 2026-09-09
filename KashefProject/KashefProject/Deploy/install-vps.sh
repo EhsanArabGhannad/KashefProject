@@ -49,6 +49,7 @@ Environment="ConnectionStrings__DefaultConnection=Data Source=/var/lib/craftisma
 Environment=Storage__UploadRoot=/var/lib/craftisma/uploads
 Environment=Storage__DataProtectionRoot=/var/lib/craftisma/keys
 EnvironmentFile=-/run/craftisma-bootstrap/admin.env
+EnvironmentFile=-/etc/craftisma/payment.env
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=true

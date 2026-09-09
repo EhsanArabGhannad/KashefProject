@@ -42,7 +42,8 @@ public sealed class CheckoutService(StoreDbContext db, ShoppingService shopping,
         // SQLite serializes this read/validate/write transaction. A cart revision
         // can produce at most one order, even with concurrent double submissions.
         await using var transaction = await db.Database.BeginTransactionAsync();
-        var existing = await db.Orders.SingleOrDefaultAsync(order => order.CheckoutKey == review.Revision && order.OwnerHash == hash);
+        var existing = await db.Orders.Include(order => order.Lines)
+            .SingleOrDefaultAsync(order => order.CheckoutKey == review.Revision && order.OwnerHash == hash);
         if (existing is not null) return new(existing, null);
         if (review.ExpiresUtc <= DateTime.UtcNow) return new(null, "Your review expired. Please check the current prices and try again.");
         var cart = await shopping.FindCartAsync();

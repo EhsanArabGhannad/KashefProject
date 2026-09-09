@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace KashefProject.Data;
 
-public enum OrderStatus { PendingPayment, Cancelled }
+public enum OrderStatus { PendingPayment, Paid, Cancelled }
 
 public sealed class StoreOrder
 {
@@ -27,6 +27,10 @@ public sealed class StoreOrder
     public long? ShippingCents { get; set; }
     public long? TaxCents { get; set; }
     public long? TotalCents { get; set; }
+    [MaxLength(255)] public string? StripeCheckoutSessionId { get; set; }
+    [MaxLength(255)] public string? StripePaymentIntentId { get; set; }
+    public long? PaymentReceivedCents { get; set; }
+    public DateTime? PaidUtc { get; set; }
     public List<StoreOrderLine> Lines { get; set; } = [];
 }
 

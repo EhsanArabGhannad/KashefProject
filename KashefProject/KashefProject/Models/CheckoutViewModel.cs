@@ -14,7 +14,7 @@ public sealed class CheckoutViewModel
     [Required, StringLength(2)] public string State { get; set; } = "";
     [Required, RegularExpression("^[0-9]{5}(-[0-9]{4})?$", ErrorMessage = "Enter a valid US ZIP code."), Display(Name = "ZIP code")]
     public string PostalCode { get; set; } = "";
-    [Range(typeof(bool), "true", "true", ErrorMessage = "Please acknowledge that this order is not yet paid or confirmed.")]
+    [Range(typeof(bool), "true", "true", ErrorMessage = "Please confirm that you reviewed your order and delivery details.")]
     public bool AcknowledgePending { get; set; }
     public CartSummary Summary { get; set; } = new([]);
 }

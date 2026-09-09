@@ -1,9 +1,9 @@
 @model CheckoutViewModel
-@{ ViewData["Title"] = "Review your order"; }
+@{ ViewData["Title"] = "Review your order"; var paymentsEnabled = (bool?)ViewData["PaymentsEnabled"] == true; }
 <main class="commerce-shell">
     <a class="back-link" href="/cart/">← Back to your bag</a>
-    <div class="commerce-heading"><span>ONE STEP CLOSER</span><h1>Your order<span>.</span></h1><p>Save your details. No payment is taken at this stage.</p></div>
-    <p class="commerce-notice">Online payment is not available yet. Saving an order does not confirm a purchase or start production. Shipping and taxes must be confirmed before payment.</p>
+    <div class="commerce-heading"><span>@(paymentsEnabled ? "SECURE CHECKOUT" : "ONE STEP CLOSER")</span><h1>Your order<span>.</span></h1><p>@(paymentsEnabled ? "Enter your delivery details, then continue to Stripe's secure payment page." : "Save your details. No payment is taken at this stage.")</p></div>
+    <p class="commerce-notice">@(paymentsEnabled ? "Your card details are collected securely by Stripe and are never stored on this website. The amount shown below covers the items only; shipping and applicable taxes will be finalized before live payments are enabled." : "Online payment is not available yet. Saving an order does not confirm a purchase or start production. Shipping and taxes must be confirmed before payment.")</p>
     <div class="commerce-grid">
         <form method="post" action="/checkout/" class="commerce-form">
             @Html.AntiForgeryToken()
@@ -20,8 +20,8 @@
             <label asp-for="State">State<select asp-for="State" autocomplete="address-level1" required><option value="">Select a state</option>@foreach (var state in UsStates.All) { <option value="@state.Key">@state.Value</option> }</select><span asp-validation-for="State"></span></label>
             <label asp-for="PostalCode">ZIP code<input asp-for="PostalCode" autocomplete="postal-code" required /><span asp-validation-for="PostalCode"></span></label>
             <label>Country<input value="United States" readonly aria-label="Country: United States" /></label>
-            <label class="full check-row"><input asp-for="AcknowledgePending" required /><span>I understand that no payment will be taken and this order is not yet confirmed.</span></label>
-            <button class="button button-dark full" type="submit">Save order — no payment <span>→</span></button>
+            <label class="full check-row"><input asp-for="AcknowledgePending" required /><span>I have reviewed my order and delivery details.</span></label>
+            <button class="button button-dark full" type="submit">@(paymentsEnabled ? "Continue to secure payment" : "Save order — no payment") <span>→</span></button>
         </form>
         <aside class="commerce-summary">
             <span class="commerce-eyebrow">YOUR PIECES · USD</span>
@@ -29,7 +29,7 @@
             <div class="summary-total"><span>Item subtotal</span><strong>@StoreMoney.Format(Model.Summary.SubtotalCents)</strong></div>
             <div class="commerce-mini-line"><span>Shipping</span><strong>Not calculated</strong></div>
             <div class="commerce-mini-line"><span>Tax</span><strong>Not calculated</strong></div>
-            <p>The subtotal is not the final charge. No card information is collected on this page.</p>
+            <p>@(paymentsEnabled ? "No card information is collected on this website. Stripe handles the secure payment step." : "The subtotal is not the final charge. No card information is collected on this page.")</p>
         </aside>
     </div>
 </main>

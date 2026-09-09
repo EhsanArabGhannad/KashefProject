@@ -48,6 +48,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CartOwner>();
 builder.Services.AddScoped<ShoppingService>();
 builder.Services.AddScoped<CheckoutService>();
+builder.Services.Configure<StripePaymentOptions>(builder.Configuration.GetSection("Stripe"));
+builder.Services.AddScoped<StripePaymentService>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
