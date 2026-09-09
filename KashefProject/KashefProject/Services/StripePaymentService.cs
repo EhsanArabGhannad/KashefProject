@@ -112,6 +112,19 @@ public sealed class StripePaymentService(
         return await db.Orders.AsNoTracking().Include(item => item.Lines).SingleAsync(item => item.Id == order.Id);
     }
 
+    public async Task<bool> SyncOrderAsync(int orderId)
+    {
+        if (!IsConfigured) return false;
+        var order = await db.Orders.SingleOrDefaultAsync(item => item.Id == orderId);
+        if (order is null || order.Status == OrderStatus.Cancelled || string.IsNullOrWhiteSpace(order.StripeCheckoutSessionId))
+            return false;
+        if (order.Status == OrderStatus.Paid) return true;
+
+        var session = await Sessions().GetAsync(order.StripeCheckoutSessionId);
+        await MarkPaidAsync(session);
+        return await db.Orders.AsNoTracking().AnyAsync(item => item.Id == orderId && item.Status == OrderStatus.Paid);
+    }
+
     public Event VerifyWebhook(string json, string signature) =>
         EventUtility.ConstructEvent(json, signature, options.WebhookSecret);
 

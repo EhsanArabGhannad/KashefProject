@@ -1,5 +1,5 @@
 @model CartSummary
-@{ ViewData["Title"] = "Your bag"; }
+@{ ViewData["Title"] = "Your bag"; var paymentsEnabled = (bool?)ViewData["PaymentsEnabled"] == true; }
 <main class="commerce-shell">
     <a class="back-link" href="/shop/">← Continue shopping</a>
     <div class="commerce-heading"><span>YOUR COLLECTION</span><h1>Your bag<span>.</span></h1><p>@Model.Count item@(Model.Count == 1 ? "" : "s") · USD</p></div>
@@ -40,7 +40,7 @@
                 <p>Shipping and taxes are not included. The final amount will be confirmed before payment.</p>
                 @if (Model.CanCheckout) { <a class="button button-dark" href="/checkout/">Review your order <span>→</span></a> }
                 else { <p class="commerce-error">Remove unavailable pieces to continue.</p> }
-                <small>Online payments are not available yet. No payment is taken when you save an order.</small>
+                <small>@(paymentsEnabled ? "Secure online payment is handled by Stripe after you review your delivery details." : "Online payments are not available yet. No payment is taken when you save an order.")</small>
             </aside>
         </div>
     }

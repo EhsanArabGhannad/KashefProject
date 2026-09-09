@@ -1,6 +1,7 @@
 @model StoreOrder
 @{ ViewData["Title"] = Model.Reference; }
 <div class="editor-heading"><a href="/admin/orders">← All orders</a><h1>@Model.Reference</h1><p>@Model.CreatedUtc.ToString("yyyy-MM-dd HH:mm") UTC · @(Model.Status switch { OrderStatus.Paid => "Paid", OrderStatus.Cancelled => "Cancelled", _ => "Pending payment" })</p></div>
+@if (TempData["OrderNotice"] is string notice) { <p class="admin-notice">@notice</p> }
 <section class="editor-card">
     @if (Model.Status == OrderStatus.Paid) { <h2>Payment verified</h2><p>Stripe confirmed this payment. This order is ready for fulfillment.</p><strong>Total paid: @KashefProject.Models.StoreMoney.Format(Model.PaymentReceivedCents ?? Model.SubtotalCents) USD</strong><p>Paid @Model.PaidUtc?.ToString("yyyy-MM-dd HH:mm") UTC</p> }
     else { <h2>Payment not received</h2><p>Do not fulfill this order until its status changes to Paid.</p><strong>Item subtotal: @KashefProject.Models.StoreMoney.Format(Model.SubtotalCents) USD</strong> }
@@ -11,5 +12,6 @@
 </section>
 @if (Model.Status == OrderStatus.PendingPayment)
 {
+    <form method="post" action="/admin/orders/@Model.Id/sync-payment" style="display:inline-block;margin-right:12px">@Html.AntiForgeryToken()<button class="admin-primary" type="submit">Check Stripe payment</button></form>
     <form method="post" action="/admin/orders/@Model.Id/cancel" onsubmit="return confirm('Cancel this unpaid order?');">@Html.AntiForgeryToken()<button class="admin-primary" type="submit">Cancel unpaid order</button></form>
 }

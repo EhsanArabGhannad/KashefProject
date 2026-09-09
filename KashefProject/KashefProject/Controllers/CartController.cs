@@ -6,10 +6,14 @@ namespace KashefProject.Controllers;
 
 [Route("cart")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class CartController(ShoppingService shopping) : Controller
+public sealed class CartController(ShoppingService shopping, StripePaymentService payments) : Controller
 {
     [HttpGet("")]
-    public async Task<IActionResult> Index() => View(await shopping.GetSummaryAsync());
+    public async Task<IActionResult> Index()
+    {
+        ViewData["PaymentsEnabled"] = payments.IsConfigured;
+        return View(await shopping.GetSummaryAsync());
+    }
 
     [HttpPost("add"), ValidateAntiForgeryToken, EnableRateLimiting("cart")]
     public async Task<IActionResult> Add(int productId, int quantity = 1)
