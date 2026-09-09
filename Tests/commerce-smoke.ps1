@@ -53,10 +53,11 @@ try {
     $checkout = Get-Page '/checkout/' $buyer
     $review = Review $checkout.Content
     Assert (![string]::IsNullOrEmpty($review)) 'signed checkout review generated'
-    $details = @{FullName='Local Test Customer';Email='buyer@example.com';AddressLine1='123 Test Street';City='Los Angeles';State='CA';PostalCode='90001';AcknowledgePending='true';ReviewToken=$review;__RequestVerificationToken=(Token $checkout.Content);SubtotalCents='1';Country='ZZ';Status='Paid'}
-    $invalidDetails = $details.Clone(); $invalidDetails.Email='invalid'; $invalidDetails.State='ZZ'
+    Assert ($checkout.Content.Contains('Standard U.S. shipping') -and $checkout.Content.Contains('$15.00') -and $checkout.Content.Contains('$54.90')) 'flat shipping included before payment'
+    $details = @{FullName='Local Test Customer';Email='buyer@example.com';AcknowledgePending='true';ReviewToken=$review;__RequestVerificationToken=(Token $checkout.Content);SubtotalCents='1';Country='ZZ';Status='Paid'}
+    $invalidDetails = $details.Clone(); $invalidDetails.Email='invalid'
     $invalid = Post-Page '/checkout/' $invalidDetails $buyer
-    Assert ($invalid.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/checkout/' -and $invalid.Content.Contains('valid US state')) 'invalid customer information rejected'
+    Assert ($invalid.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/checkout/' -and $invalid.Content.Contains('not a valid')) 'invalid customer information rejected'
 
     $editor = Get-Page ("/admin/products/$id/edit") $admin
     $form.Remove('NewImages'); $form.Id=$id; $form.PriceDollars='24.95'; $form.__RequestVerificationToken=Token $editor.Content
@@ -83,7 +84,7 @@ try {
         $savedPath=$first.RequestMessage.RequestUri.AbsolutePath
         Assert ($savedPath.StartsWith('/checkout/saved/') -and $savedPath -eq $second.RequestMessage.RequestUri.AbsolutePath) 'concurrent submissions create only one order'
         $savedHtml=$first.Content.ReadAsStringAsync().GetAwaiter().GetResult()
-        Assert ($savedHtml.Contains('$49.90') -and $savedHtml.Contains('Pending payment')) 'subtotal and unpaid status are server controlled'
+        Assert ($savedHtml.Contains('$49.90') -and $savedHtml.Contains('$64.90') -and $savedHtml.Contains('Pending payment')) 'subtotal, shipping, and unpaid status are server controlled'
     } finally { $client.Dispose() }
     Assert ((Get-Page '/cart/' $buyer).Content.Contains('Your bag is empty')) 'successful save clears the bag'
     Assert ([int](Get-Page $savedPath $stranger).StatusCode -eq 404) 'another visitor cannot read the order'
@@ -94,8 +95,15 @@ try {
     $orderId=[regex]::Match($orders.Content, 'href="/admin/orders/(\d+)"><h2>' + $reference).Groups[1].Value
     Assert (![string]::IsNullOrEmpty($orderId)) 'saved order appears in admin'
     $order=Get-Page ("/admin/orders/$orderId") $admin
-    Assert ($order.Content.Contains('buyer@example.com') -and $order.Content.Contains('United States') -and $order.Content.Contains('$49.90')) 'admin can read delivery and amount snapshots'
+    Assert ($order.Content.Contains('buyer@example.com') -and $order.Content.Contains('Delivery address will be added after Stripe') -and $order.Content.Contains('$64.90')) 'admin can read pending delivery and amount snapshots'
     Assert ((Get-Page '/admin/orders' $stranger).BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/admin/login') 'order administration requires authentication'
+
+    $freeBuyer = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+    $freeProduct = Get-Page ("/shop/$slug/") $freeBuyer
+    $freeBag = Post-Page '/cart/add' @{productId=$id;quantity='7';__RequestVerificationToken=(Token $freeProduct.Content)} $freeBuyer
+    $freeCheckout = Get-Page '/checkout/' $freeBuyer
+    Assert ($freeCheckout.Content.Contains('Standard U.S. shipping') -and $freeCheckout.Content.Contains('Free') -and $freeCheckout.Content.Contains('$174.65')) 'free shipping threshold applied'
+    Post-Page '/cart/update' @{productId=$id;quantity='0';__RequestVerificationToken=(Token $freeBag.Content)} $freeBuyer | Out-Null
 
     # Put a product in another bag, then unpublish it.
     $anotherProduct=Get-Page ("/shop/$slug/") $stranger

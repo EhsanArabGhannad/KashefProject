@@ -2,8 +2,8 @@
 @{ ViewData["Title"] = "Review your order"; var paymentsEnabled = (bool?)ViewData["PaymentsEnabled"] == true; }
 <main class="commerce-shell">
     <a class="back-link" href="/cart/">← Back to your bag</a>
-    <div class="commerce-heading"><span>@(paymentsEnabled ? "SECURE CHECKOUT" : "ONE STEP CLOSER")</span><h1>Your order<span>.</span></h1><p>@(paymentsEnabled ? "Enter your delivery details, then continue to Stripe's secure payment page." : "Save your details. No payment is taken at this stage.")</p></div>
-    <p class="commerce-notice">@(paymentsEnabled ? "Your card details are collected securely by Stripe and are never stored on this website. The amount shown below covers the items only; shipping and applicable taxes will be finalized before live payments are enabled." : "Online payment is not available yet. Saving an order does not confirm a purchase or start production. Shipping and taxes must be confirmed before payment.")</p>
+    <div class="commerce-heading"><span>@(paymentsEnabled ? "SECURE CHECKOUT" : "ONE STEP CLOSER")</span><h1>Your order<span>.</span></h1><p>@(paymentsEnabled ? "Enter your contact details, then continue to Stripe to confirm your U.S. delivery address and payment." : "Save your details. No payment is taken at this stage.")</p></div>
+    <p class="commerce-notice">@(paymentsEnabled ? "Your card details are collected securely by Stripe and are never stored on this website. Standard U.S. shipping is included below; applicable tax is finalized on Stripe when tax collection is enabled." : "Online payment is not available yet. Saving an order does not confirm a purchase or start production.")</p>
     <div class="commerce-grid">
         <form method="post" action="/checkout/" class="commerce-form">
             @Html.AntiForgeryToken()
@@ -13,22 +13,17 @@
             <label class="full" asp-for="FullName">Full name<input asp-for="FullName" autocomplete="name" required /><span asp-validation-for="FullName"></span></label>
             <label asp-for="Email">Email<input asp-for="Email" autocomplete="email" type="email" required /><span asp-validation-for="Email"></span></label>
             <label asp-for="Phone">Phone (optional)<input asp-for="Phone" autocomplete="tel" type="tel" /><span asp-validation-for="Phone"></span></label>
-            <h2 class="full">Delivery address</h2>
-            <label class="full" asp-for="AddressLine1">Street address<input asp-for="AddressLine1" autocomplete="address-line1" required /><span asp-validation-for="AddressLine1"></span></label>
-            <label class="full" asp-for="AddressLine2">Apartment, suite, etc. (optional)<input asp-for="AddressLine2" autocomplete="address-line2" /><span asp-validation-for="AddressLine2"></span></label>
-            <label asp-for="City">City<input asp-for="City" autocomplete="address-level2" required /><span asp-validation-for="City"></span></label>
-            <label asp-for="State">State<select asp-for="State" autocomplete="address-level1" required><option value="">Select a state</option>@foreach (var state in UsStates.All) { <option value="@state.Key">@state.Value</option> }</select><span asp-validation-for="State"></span></label>
-            <label asp-for="PostalCode">ZIP code<input asp-for="PostalCode" autocomplete="postal-code" required /><span asp-validation-for="PostalCode"></span></label>
-            <label>Country<input value="United States" readonly aria-label="Country: United States" /></label>
-            <label class="full check-row"><input asp-for="AcknowledgePending" required /><span>I have reviewed my order and delivery details.</span></label>
+            <p class="full">Stripe will collect and validate the delivery address. Shipping is currently available within the United States only.</p>
+            <label class="full check-row"><input asp-for="AcknowledgePending" required /><span>I have reviewed my order and contact details.</span></label>
             <button class="button button-dark full" type="submit">@(paymentsEnabled ? "Continue to secure payment" : "Save order — no payment") <span>→</span></button>
         </form>
         <aside class="commerce-summary">
             <span class="commerce-eyebrow">YOUR PIECES · USD</span>
             @foreach (var line in Model.Summary.Lines) { <div class="commerce-mini-line"><span>@line.Name × @line.Quantity</span><strong>@StoreMoney.Format(line.LineTotalCents)</strong></div> }
             <div class="summary-total"><span>Item subtotal</span><strong>@StoreMoney.Format(Model.Summary.SubtotalCents)</strong></div>
-            <div class="commerce-mini-line"><span>Shipping</span><strong>Not calculated</strong></div>
-            <div class="commerce-mini-line"><span>Tax</span><strong>Not calculated</strong></div>
+            <div class="commerce-mini-line"><span>Standard U.S. shipping</span><strong>@(Model.ShippingCents == 0 ? "Free" : StoreMoney.Format(Model.ShippingCents))</strong></div>
+            <div class="commerce-mini-line"><span>Tax</span><strong>@(Model.AutomaticTaxEnabled ? "Calculated by Stripe" : "Not collected")</strong></div>
+            <div class="summary-total"><span>Total before tax</span><strong>@StoreMoney.Format(Model.TotalBeforeTaxCents)</strong></div>
             <p>@(paymentsEnabled ? "No card information is collected on this website. Stripe handles the secure payment step." : "The subtotal is not the final charge. No card information is collected on this page.")</p>
         </aside>
     </div>

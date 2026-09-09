@@ -28,7 +28,6 @@ public sealed class CheckoutController(
     [RequestSizeLimit(32 * 1024)]
     public async Task<IActionResult> Index(CheckoutViewModel model)
     {
-        if (!UsStates.All.ContainsKey(model.State ?? "")) ModelState.AddModelError(nameof(model.State), "Choose a valid US state.");
         if (ModelState.IsValid)
         {
             var result = await checkout.SubmitAsync(model);

@@ -16,7 +16,10 @@
         </section>
         <aside class="commerce-summary"><span class="commerce-eyebrow">ORDER · USD</span>
             @foreach (var line in Model.Lines) { <div class="commerce-mini-line"><span>@line.ProductName × @line.Quantity</span><strong>@StoreMoney.Format(line.UnitPriceCents * line.Quantity)</strong></div> }
-            <div class="summary-total"><span>@(Model.Status == KashefProject.Data.OrderStatus.Paid ? "Total paid" : "Item subtotal")</span><strong>@StoreMoney.Format(Model.Status == KashefProject.Data.OrderStatus.Paid ? Model.PaymentReceivedCents ?? Model.SubtotalCents : Model.SubtotalCents)</strong></div><p>@(Model.Status == KashefProject.Data.OrderStatus.Paid ? $"Paid {Model.PaidUtc:MMMM d, yyyy}." : "Shipping and tax: not calculated.")</p>
+            <div class="commerce-mini-line"><span>Item subtotal</span><strong>@StoreMoney.Format(Model.SubtotalCents)</strong></div>
+            <div class="commerce-mini-line"><span>Shipping</span><strong>@(Model.ShippingCents == 0 ? "Free" : Model.ShippingCents is null ? "Pending" : StoreMoney.Format(Model.ShippingCents.Value))</strong></div>
+            @if (Model.Status == KashefProject.Data.OrderStatus.Paid) { <div class="commerce-mini-line"><span>Tax</span><strong>@StoreMoney.Format(Model.TaxCents ?? 0)</strong></div> }
+            <div class="summary-total"><span>@(Model.Status == KashefProject.Data.OrderStatus.Paid ? "Total paid" : "Total before tax")</span><strong>@StoreMoney.Format(Model.Status == KashefProject.Data.OrderStatus.Paid ? Model.PaymentReceivedCents ?? Model.SubtotalCents : Model.SubtotalCents + (Model.ShippingCents ?? 0))</strong></div><p>@(Model.Status == KashefProject.Data.OrderStatus.Paid ? $"Paid {Model.PaidUtc:MMMM d, yyyy}." : "Applicable tax is finalized securely at payment when tax collection is enabled.")</p>
         </aside>
     </div>
 </main>

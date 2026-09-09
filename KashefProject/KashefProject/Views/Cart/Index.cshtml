@@ -1,5 +1,5 @@
 @model CartSummary
-@{ ViewData["Title"] = "Your bag"; var paymentsEnabled = (bool?)ViewData["PaymentsEnabled"] == true; }
+@{ ViewData["Title"] = "Your bag"; var paymentsEnabled = (bool?)ViewData["PaymentsEnabled"] == true; var shipping = (long)ViewData["StandardShippingCents"]!; var freeShipping = (long)ViewData["FreeShippingThresholdCents"]!; }
 <main class="commerce-shell">
     <a class="back-link" href="/shop/">← Continue shopping</a>
     <div class="commerce-heading"><span>YOUR COLLECTION</span><h1>Your bag<span>.</span></h1><p>@Model.Count item@(Model.Count == 1 ? "" : "s") · USD</p></div>
@@ -37,7 +37,7 @@
             <aside class="commerce-summary">
                 <span class="commerce-eyebrow">ORDER SUMMARY</span>
                 <div class="summary-total"><span>Item subtotal</span><strong>@StoreMoney.Format(Model.SubtotalCents)</strong></div>
-                <p>Shipping and taxes are not included. The final amount will be confirmed before payment.</p>
+                <p>Standard U.S. shipping is @StoreMoney.Format(shipping), or free when the item subtotal reaches @StoreMoney.Format(freeShipping). Applicable tax is finalized securely at payment.</p>
                 @if (Model.CanCheckout) { <a class="button button-dark" href="/checkout/">Review your order <span>→</span></a> }
                 else { <p class="commerce-error">Remove unavailable pieces to continue.</p> }
                 <small>@(paymentsEnabled ? "Secure online payment is handled by Stripe after you review your delivery details." : "Online payments are not available yet. No payment is taken when you save an order.")</small>

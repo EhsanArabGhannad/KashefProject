@@ -17,6 +17,7 @@ public sealed record StripeCheckoutStart(string Url, string SessionId);
 public sealed class StripePaymentService(
     StoreDbContext db,
     IOptions<StripePaymentOptions> configuredOptions,
+    FulfillmentPolicy fulfillment,
     IConfiguration configuration,
     ILogger<StripePaymentService> logger)
 {
@@ -50,6 +51,12 @@ public sealed class StripePaymentService(
         if (order.Status == OrderStatus.Paid) throw new InvalidOperationException("This order is already paid.");
         if (order.Lines.Count == 0) throw new InvalidOperationException("This order has no items.");
 
+        if (order.ShippingCents is null)
+        {
+            order.ShippingCents = fulfillment.ShippingFor(order.SubtotalCents);
+            await db.SaveChangesAsync();
+        }
+
         var sessions = Sessions();
         if (!string.IsNullOrWhiteSpace(order.StripeCheckoutSessionId))
         {
@@ -71,6 +78,12 @@ public sealed class StripePaymentService(
             CancelUrl = $"{site}/checkout/saved/{Uri.EscapeDataString(order.Reference)}?payment=cancelled",
             ClientReferenceId = order.Reference,
             CustomerEmail = order.Email,
+            CustomerCreation = "always",
+            ShippingAddressCollection = new SessionShippingAddressCollectionOptions
+            {
+                AllowedCountries = ["US"]
+            },
+            AutomaticTax = new SessionAutomaticTaxOptions { Enabled = fulfillment.AutomaticTaxEnabled },
             SubmitType = "pay",
             Metadata = new Dictionary<string, string> { ["order_reference"] = order.Reference },
             PaymentIntentData = new SessionPaymentIntentDataOptions
@@ -84,13 +97,44 @@ public sealed class StripePaymentService(
                 {
                     Currency = "usd",
                     UnitAmount = line.UnitPriceCents,
+                    TaxBehavior = "exclusive",
                     ProductData = new SessionLineItemPriceDataProductDataOptions
                     {
                         Name = line.ProductName,
-                        Description = $"{line.Size} · {line.Finish}"
+                        Description = $"{line.Size} · {line.Finish}",
+                        TaxCode = "txcd_99999999"
                     }
                 }
-            }).ToList()
+            }).ToList(),
+            ShippingOptions =
+            [
+                new SessionShippingOptionOptions
+                {
+                    ShippingRateData = new SessionShippingOptionShippingRateDataOptions
+                    {
+                        Type = "fixed_amount",
+                        DisplayName = order.ShippingCents == 0 ? "Free standard shipping" : "Standard shipping",
+                        FixedAmount = new SessionShippingOptionShippingRateDataFixedAmountOptions
+                        {
+                            Amount = order.ShippingCents,
+                            Currency = "usd"
+                        },
+                        TaxBehavior = "exclusive",
+                        TaxCode = "txcd_92010001",
+                        DeliveryEstimate = new SessionShippingOptionShippingRateDataDeliveryEstimateOptions
+                        {
+                            Minimum = new SessionShippingOptionShippingRateDataDeliveryEstimateMinimumOptions
+                            {
+                                Unit = "business_day", Value = 5
+                            },
+                            Maximum = new SessionShippingOptionShippingRateDataDeliveryEstimateMaximumOptions
+                            {
+                                Unit = "business_day", Value = 7
+                            }
+                        }
+                    }
+                }
+            ]
         };
         var idempotency = $"craftisma-{order.Reference}-{order.StripeCheckoutSessionId ?? "first"}";
         var session = await sessions.CreateAsync(create, new RequestOptions { IdempotencyKey = idempotency });
@@ -149,18 +193,42 @@ public sealed class StripePaymentService(
             logger.LogWarning("Rejected Stripe session {SessionId}: order {Reference} is linked to another session.", session.Id, reference);
             return;
         }
-        if (session.AmountTotal is null || session.AmountTotal < order.SubtotalCents)
+        var expectedShipping = order.ShippingCents ?? fulfillment.ShippingFor(order.SubtotalCents);
+        var receivedShipping = session.TotalDetails?.AmountShipping ?? 0;
+        if (receivedShipping != expectedShipping)
         {
-            logger.LogWarning("Rejected Stripe session {SessionId}: amount {Amount} is below order subtotal {Subtotal}.", session.Id, session.AmountTotal, order.SubtotalCents);
+            logger.LogWarning("Rejected Stripe session {SessionId}: shipping {Shipping} does not match expected {ExpectedShipping}.", session.Id, receivedShipping, expectedShipping);
+            return;
+        }
+        if (session.AmountTotal is null || session.AmountTotal < order.SubtotalCents + expectedShipping)
+        {
+            logger.LogWarning("Rejected Stripe session {SessionId}: amount {Amount} is below the expected pre-tax total {ExpectedTotal}.", session.Id, session.AmountTotal, order.SubtotalCents + expectedShipping);
+            return;
+        }
+
+        var shipping = session.CollectedInformation?.ShippingDetails;
+        var address = shipping?.Address;
+        if (address is null || !string.Equals(address.Country, "US", StringComparison.OrdinalIgnoreCase) ||
+            string.IsNullOrWhiteSpace(address.Line1) || string.IsNullOrWhiteSpace(address.City) ||
+            string.IsNullOrWhiteSpace(address.State) || string.IsNullOrWhiteSpace(address.PostalCode))
+        {
+            logger.LogWarning("Rejected Stripe session {SessionId}: a complete U.S. delivery address was not returned.", session.Id);
             return;
         }
 
         order.StripeCheckoutSessionId = session.Id;
         order.StripePaymentIntentId = session.PaymentIntentId;
         order.PaymentReceivedCents = session.AmountTotal;
-        order.ShippingCents = session.TotalDetails?.AmountShipping;
+        order.ShippingCents = receivedShipping;
         order.TaxCents = session.TotalDetails?.AmountTax;
         order.TotalCents = session.AmountTotal;
+        if (!string.IsNullOrWhiteSpace(shipping?.Name)) order.FullName = shipping.Name;
+        order.AddressLine1 = address.Line1;
+        order.AddressLine2 = address.Line2;
+        order.City = address.City;
+        order.State = address.State;
+        order.PostalCode = address.PostalCode;
+        order.Country = "US";
         order.PaidUtc = DateTime.UtcNow;
         order.Status = OrderStatus.Paid;
         await db.SaveChangesAsync();

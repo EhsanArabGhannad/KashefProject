@@ -11,7 +11,12 @@ namespace KashefProject.Services;
 public sealed record CheckoutReview(int CartId, Guid Revision, string Fingerprint, DateTime ExpiresUtc);
 public sealed record OrderSubmission(StoreOrder? Order, string? Error);
 
-public sealed class CheckoutService(StoreDbContext db, ShoppingService shopping, CartOwner owner, IDataProtectionProvider protection)
+public sealed class CheckoutService(
+    StoreDbContext db,
+    ShoppingService shopping,
+    CartOwner owner,
+    IDataProtectionProvider protection,
+    FulfillmentPolicy fulfillment)
 {
     private readonly IDataProtector protector = protection.CreateProtector("Craftisma.CheckoutReview.v1");
 
@@ -25,6 +30,8 @@ public sealed class CheckoutService(StoreDbContext db, ShoppingService shopping,
         if (cart is null || !summary.CanCheckout) return null;
         model ??= new CheckoutViewModel();
         model.Summary = summary;
+        model.ShippingCents = fulfillment.ShippingFor(summary.SubtotalCents);
+        model.AutomaticTaxEnabled = fulfillment.AutomaticTaxEnabled;
         model.ReviewToken = protector.Protect(JsonSerializer.Serialize(new CheckoutReview(
             cart.Id, cart.Revision, Fingerprint(summary), DateTime.UtcNow.AddMinutes(30))));
         return model;
@@ -57,9 +64,10 @@ public sealed class CheckoutService(StoreDbContext db, ShoppingService shopping,
             Reference = "CF-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(8)),
             OwnerHash = hash, CheckoutKey = review.Revision,
             FullName = model.FullName.Trim(), Email = model.Email.Trim(), Phone = model.Phone?.Trim(),
-            AddressLine1 = model.AddressLine1.Trim(), AddressLine2 = model.AddressLine2?.Trim(),
-            City = model.City.Trim(), State = model.State, PostalCode = model.PostalCode.Trim(),
+            // Stripe Checkout securely collects and validates the U.S. delivery address.
+            AddressLine1 = "", City = "", State = "", PostalCode = "",
             SubtotalCents = summary.SubtotalCents,
+            ShippingCents = fulfillment.ShippingFor(summary.SubtotalCents),
             Lines = summary.Lines.Select(line => new StoreOrderLine
             {
                 ProductId = line.ProductId, ProductName = line.Name, Finish = line.Finish, Size = line.Size,

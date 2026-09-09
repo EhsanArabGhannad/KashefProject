@@ -48,6 +48,13 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CartOwner>();
 builder.Services.AddScoped<ShoppingService>();
 builder.Services.AddScoped<CheckoutService>();
+builder.Services.AddOptions<FulfillmentOptions>()
+    .Bind(builder.Configuration.GetSection(FulfillmentOptions.SectionName))
+    .Validate(options => options.OriginState == "VA", "The fulfillment origin must remain Virginia (VA).")
+    .Validate(options => options.StandardShippingCents >= 0, "Standard shipping cannot be negative.")
+    .Validate(options => options.FreeShippingThresholdCents > 0, "The free-shipping threshold must be positive.")
+    .ValidateOnStart();
+builder.Services.AddScoped<FulfillmentPolicy>();
 builder.Services.Configure<StripePaymentOptions>(builder.Configuration.GetSection("Stripe"));
 builder.Services.AddScoped<StripePaymentService>();
 builder.Services.AddRateLimiter(options =>

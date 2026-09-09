@@ -6,12 +6,14 @@ namespace KashefProject.Controllers;
 
 [Route("cart")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class CartController(ShoppingService shopping, StripePaymentService payments) : Controller
+public sealed class CartController(ShoppingService shopping, StripePaymentService payments, FulfillmentPolicy fulfillment) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index()
     {
         ViewData["PaymentsEnabled"] = payments.IsConfigured;
+        ViewData["StandardShippingCents"] = fulfillment.StandardShippingCents;
+        ViewData["FreeShippingThresholdCents"] = fulfillment.FreeShippingThresholdCents;
         return View(await shopping.GetSummaryAsync());
     }
 
