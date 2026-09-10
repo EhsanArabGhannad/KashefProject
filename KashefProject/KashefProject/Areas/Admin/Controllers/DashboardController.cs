@@ -3,12 +3,14 @@ using KashefProject.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using KashefProject.Services;
 
 namespace KashefProject.Areas.Admin.Controllers;
 
 [Area("Admin"), Authorize(Roles = "Admin"), Route("admin")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class DashboardController(StoreDbContext db) : Controller
+public sealed class DashboardController(StoreDbContext db, IOptions<EmailDeliveryOptions> emailOptions) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index()
@@ -26,6 +28,7 @@ public sealed class DashboardController(StoreDbContext db) : Controller
                 order.FulfillmentStatus != FulfillmentStatus.Delivered),
             PendingPayments = await db.Orders.CountAsync(order => order.Status == OrderStatus.PendingPayment),
             PublishedProducts = await db.Products.CountAsync(product => product.IsPublished),
+            EmailConfigured = emailOptions.Value.IsConfigured,
             RecentOrders = await db.Orders.AsNoTracking().OrderByDescending(order => order.Id).Take(6).ToListAsync()
         });
     }

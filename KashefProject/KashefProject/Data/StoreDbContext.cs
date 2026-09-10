@@ -12,6 +12,7 @@ public sealed class StoreDbContext(DbContextOptions<StoreDbContext> options) : I
     public DbSet<ShoppingCartItem> ShoppingCartItems => Set<ShoppingCartItem>();
     public DbSet<StoreOrder> Orders => Set<StoreOrder>();
     public DbSet<StoreOrderLine> OrderLines => Set<StoreOrderLine>();
+    public DbSet<OrderNotification> OrderNotifications => Set<OrderNotification>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -25,6 +26,10 @@ public sealed class StoreDbContext(DbContextOptions<StoreDbContext> options) : I
         builder.Entity<StoreOrder>().HasIndex(order => order.StripePaymentIntentId).IsUnique();
         builder.Entity<StoreOrder>().Property(order => order.Status).HasConversion<string>().HasMaxLength(24);
         builder.Entity<StoreOrder>().Property(order => order.FulfillmentStatus).HasConversion<string>().HasMaxLength(24);
+        builder.Entity<OrderNotification>().Property(notification => notification.Kind).HasConversion<string>().HasMaxLength(32);
+        builder.Entity<OrderNotification>().Property(notification => notification.Status).HasConversion<string>().HasMaxLength(24);
+        builder.Entity<OrderNotification>().HasIndex(notification => new { notification.StoreOrderId, notification.Kind }).IsUnique();
+        builder.Entity<OrderNotification>().HasIndex(notification => new { notification.Status, notification.NextAttemptUtc });
         builder.Entity<StoreOrderLine>().ToTable(table =>
         {
             table.HasCheckConstraint("CK_OrderLine_Quantity", "Quantity BETWEEN 1 AND 20");

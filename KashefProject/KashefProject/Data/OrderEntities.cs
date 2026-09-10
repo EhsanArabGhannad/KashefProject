@@ -4,6 +4,8 @@ namespace KashefProject.Data;
 
 public enum OrderStatus { PendingPayment, Paid, Cancelled }
 public enum FulfillmentStatus { Pending, Processing, Shipped, Delivered }
+public enum OrderNotificationKind { PaymentCustomer, PaymentAdmin, ShipmentCustomer }
+public enum OrderNotificationStatus { Pending, Sending, Sent, Failed }
 
 public sealed class StoreOrder
 {
@@ -39,6 +41,7 @@ public sealed class StoreOrder
     public long? PaymentReceivedCents { get; set; }
     public DateTime? PaidUtc { get; set; }
     public List<StoreOrderLine> Lines { get; set; } = [];
+    public List<OrderNotification> Notifications { get; set; } = [];
 }
 
 public sealed class StoreOrderLine
@@ -52,4 +55,20 @@ public sealed class StoreOrderLine
     [MaxLength(160)] public required string Size { get; set; }
     public long UnitPriceCents { get; set; }
     public int Quantity { get; set; }
+}
+
+public sealed class OrderNotification
+{
+    public int Id { get; set; }
+    public int StoreOrderId { get; set; }
+    public StoreOrder StoreOrder { get; set; } = null!;
+    public OrderNotificationKind Kind { get; set; }
+    public OrderNotificationStatus Status { get; set; } = OrderNotificationStatus.Pending;
+    public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
+    public DateTime NextAttemptUtc { get; set; } = DateTime.UtcNow;
+    public DateTime? LastAttemptUtc { get; set; }
+    public DateTime? SentUtc { get; set; }
+    public int AttemptCount { get; set; }
+    [MaxLength(120)] public string? ProviderMessageId { get; set; }
+    [MaxLength(500)] public string? LastError { get; set; }
 }

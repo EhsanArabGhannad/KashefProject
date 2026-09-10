@@ -18,6 +18,7 @@ public sealed class StripePaymentService(
     StoreDbContext db,
     IOptions<StripePaymentOptions> configuredOptions,
     FulfillmentPolicy fulfillment,
+    OrderNotificationQueue notifications,
     IConfiguration configuration,
     ILogger<StripePaymentService> logger)
 {
@@ -231,6 +232,9 @@ public sealed class StripePaymentService(
         order.Country = "US";
         order.PaidUtc = DateTime.UtcNow;
         order.Status = OrderStatus.Paid;
+        await using var transaction = await db.Database.BeginTransactionAsync();
         await db.SaveChangesAsync();
+        await notifications.QueuePaymentAsync(order.Id);
+        await transaction.CommitAsync();
     }
 }

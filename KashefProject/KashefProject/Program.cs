@@ -57,6 +57,14 @@ builder.Services.AddOptions<FulfillmentOptions>()
 builder.Services.AddScoped<FulfillmentPolicy>();
 builder.Services.Configure<StripePaymentOptions>(builder.Configuration.GetSection("Stripe"));
 builder.Services.AddScoped<StripePaymentService>();
+builder.Services.Configure<EmailDeliveryOptions>(builder.Configuration.GetSection(EmailDeliveryOptions.SectionName));
+builder.Services.AddHttpClient<ITransactionalEmailSender, ResendEmailSender>(client =>
+{
+    client.BaseAddress = new Uri("https://api.resend.com/");
+    client.Timeout = TimeSpan.FromSeconds(20);
+});
+builder.Services.AddScoped<OrderNotificationQueue>();
+builder.Services.AddHostedService<OrderNotificationWorker>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

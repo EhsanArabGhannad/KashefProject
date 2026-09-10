@@ -74,6 +74,41 @@
             <div class="editor-actions full"><button class="admin-primary" type="submit">Save fulfillment</button></div>
         </form>
     </section>
+
+    <section class="editor-card notification-card">
+        <div class="fulfillment-heading">
+            <div><span class="admin-eyebrow">AUTOMATIC EMAILS</span><h2>Delivery log</h2></div>
+            @if (Model.Notifications.Any(notification => notification.Status == OrderNotificationStatus.Failed))
+            {
+                <form method="post" action="/admin/orders/@Model.Id/notifications/retry">
+                    @Html.AntiForgeryToken()
+                    <button class="admin-secondary" type="submit">Retry failed email</button>
+                </form>
+            }
+        </div>
+        @if (Model.Notifications.Count == 0)
+        {
+            <p class="subtle-copy">No automatic emails were queued for this older order.</p>
+        }
+        else
+        {
+            <div class="notification-list">
+            @foreach (var notification in Model.Notifications.OrderBy(item => item.Id))
+            {
+                var label = notification.Kind switch
+                {
+                    OrderNotificationKind.PaymentCustomer => "Order confirmation · customer",
+                    OrderNotificationKind.PaymentAdmin => "New order alert · admin",
+                    _ => "Shipping confirmation · customer"
+                };
+                <div class="notification-row">
+                    <div><strong>@label</strong><small>@(notification.SentUtc is null ? $"Queued {notification.CreatedUtc:MMM d, yyyy · HH:mm} UTC" : $"Sent {notification.SentUtc:MMM d, yyyy · HH:mm} UTC")</small></div>
+                    <span class="status-pill status-pill--@notification.Status.ToString().ToLowerInvariant()">@notification.Status</span>
+                </div>
+            }
+            </div>
+        }
+    </section>
 }
 
 <section class="editor-card order-lines-card">

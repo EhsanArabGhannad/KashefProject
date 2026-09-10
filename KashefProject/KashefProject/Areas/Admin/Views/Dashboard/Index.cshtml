@@ -18,6 +18,11 @@
     <a class="admin-primary" href="/admin/products/create">Add product <span>→</span></a>
 </div>
 
+@if (!Model.EmailConfigured)
+{
+    <div class="admin-notice admin-notice--warning"><strong>Email setup required.</strong> Orders are safe, but automatic customer and admin emails will remain queued until the sending domain is connected.</div>
+}
+
 <section class="dashboard-stats" aria-label="Store summary">
     <a class="dashboard-stat dashboard-stat--accent" href="/admin/orders?payment=paid">
         <span>This month's revenue</span>

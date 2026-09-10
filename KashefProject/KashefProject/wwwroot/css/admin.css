@@ -17,6 +17,7 @@ a { color:inherit; }
 .admin-primary { min-height:50px; padding:0 22px; border:0; border-radius:999px; background:var(--ink); color:white; display:inline-flex; align-items:center; justify-content:center; gap:22px; text-decoration:none; font:700 .92rem Manrope; cursor:pointer; }
 .admin-primary:hover { background:#2b2a27; }
 .admin-notice { margin-bottom:20px; padding:15px 18px; border:1px solid #a6c86f; background:#edf8db; border-radius:14px; }
+.admin-notice--warning { border-color:#dfc58e; background:#fff7e6; }
 .product-admin-list { display:grid; gap:12px; }
 .product-admin-row { display:grid; grid-template-columns:100px minmax(220px,1fr) 180px auto; align-items:center; gap:20px; padding:12px; background:white; border:1px solid var(--line); border-radius:18px; }
 .product-admin-image { width:100px; height:88px; border-radius:12px; overflow:hidden; background:#e8e2d5; }
@@ -81,6 +82,9 @@ input:focus,select:focus,textarea:focus { outline:2px solid var(--orange); borde
 .status-pill--cancelled { color:#7d3931; border-color:#d8aaa2; background:#fff0ed; }
 .status-pill--processing { color:#335b72; border-color:#9fc0d1; background:#edf7fc; }
 .status-pill--shipped { color:#4d4380; border-color:#b9b0df; background:#f2efff; }
+.status-pill--sent { color:#31551f; border-color:#abc891; background:#eff7e7; }
+.status-pill--sending { color:#335b72; border-color:#9fc0d1; background:#edf7fc; }
+.status-pill--failed { color:#7d3931; border-color:#d8aaa2; background:#fff0ed; }
 .muted-dash,.subtle-copy { color:var(--muted); }
 .order-filters { display:grid; grid-template-columns:minmax(260px,1.5fr) minmax(160px,.65fr) minmax(180px,.75fr) auto auto; align-items:end; gap:14px; margin-bottom:22px; padding:18px; border:1px solid var(--line); border-radius:18px; background:white; }
 .order-filters label { display:grid; gap:7px; font-size:.76rem; font-weight:800; }
@@ -96,6 +100,11 @@ input:focus,select:focus,textarea:focus { outline:2px solid var(--orange); borde
 .order-totals dt { color:var(--muted); }
 .editor-card address { font-style:normal; line-height:1.75; }
 .fulfillment-card,.order-lines-card { margin-top:18px; }
+.notification-card { margin-top:18px; }
+.notification-list { border-top:1px solid var(--line); }
+.notification-row { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:15px 0; border-bottom:1px solid var(--line); }
+.notification-row:last-child { border-bottom:0; }
+.notification-row small { display:block; margin-top:4px; color:var(--muted); }
 .fulfillment-heading { display:flex; align-items:start; justify-content:space-between; gap:22px; margin-bottom:24px; }
 .fulfillment-heading h2 { margin:5px 0 0; }
 .fulfillment-meta { display:flex; gap:18px; flex-wrap:wrap; color:var(--muted); font-size:.76rem; }

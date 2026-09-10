@@ -50,6 +50,7 @@ Environment=Storage__UploadRoot=/var/lib/craftisma/uploads
 Environment=Storage__DataProtectionRoot=/var/lib/craftisma/keys
 EnvironmentFile=-/run/craftisma-bootstrap/admin.env
 EnvironmentFile=-/etc/craftisma/payment.env
+EnvironmentFile=-/etc/craftisma/email.env
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=true

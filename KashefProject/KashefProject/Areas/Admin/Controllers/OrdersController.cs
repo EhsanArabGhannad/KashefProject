@@ -10,7 +10,11 @@ namespace KashefProject.Areas.Admin.Controllers;
 
 [Area("Admin"), Authorize(Roles = "Admin"), Route("admin/orders")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class OrdersController(StoreDbContext db, StripePaymentService payments, ILogger<OrdersController> logger) : Controller
+public sealed class OrdersController(
+    StoreDbContext db,
+    StripePaymentService payments,
+    OrderNotificationQueue notifications,
+    ILogger<OrdersController> logger) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(string? q, string? payment, string? fulfillment, int page = 1)
@@ -47,7 +51,10 @@ public sealed class OrdersController(StoreDbContext db, StripePaymentService pay
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Details(int id)
     {
-        var order = await db.Orders.AsNoTracking().Include(item => item.Lines).SingleOrDefaultAsync(item => item.Id == id);
+        var order = await db.Orders.AsNoTracking()
+            .Include(item => item.Lines)
+            .Include(item => item.Notifications)
+            .SingleOrDefaultAsync(item => item.Id == id);
         return order is null ? NotFound() : View(order);
     }
 
@@ -87,6 +94,7 @@ public sealed class OrdersController(StoreDbContext db, StripePaymentService pay
         }
 
         var now = DateTime.UtcNow;
+        var wasShipped = order.FulfillmentStatus is FulfillmentStatus.Shipped or FulfillmentStatus.Delivered;
         order.FulfillmentStatus = model.FulfillmentStatus;
         order.TrackingCarrier = model.TrackingCarrier;
         order.TrackingNumber = model.TrackingNumber;
@@ -95,8 +103,32 @@ public sealed class OrdersController(StoreDbContext db, StripePaymentService pay
             order.ShippedUtc ??= now;
         if (model.FulfillmentStatus == FulfillmentStatus.Delivered)
             order.DeliveredUtc ??= now;
+        await using var transaction = await db.Database.BeginTransactionAsync();
         await db.SaveChangesAsync();
+        if (!wasShipped &&
+            (model.FulfillmentStatus is FulfillmentStatus.Shipped or FulfillmentStatus.Delivered))
+            await notifications.QueueShipmentAsync(order.Id);
+        await transaction.CommitAsync();
         TempData["OrderNotice"] = $"Fulfillment updated to {model.FulfillmentStatus}.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost("{id:int}/notifications/retry"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> RetryNotifications(int id)
+    {
+        if (!await db.Orders.AnyAsync(order => order.Id == id)) return NotFound();
+        var now = DateTime.UtcNow;
+        var count = await db.OrderNotifications
+            .Where(notification => notification.StoreOrderId == id &&
+                notification.Status == OrderNotificationStatus.Failed)
+            .ExecuteUpdateAsync(update => update
+                .SetProperty(notification => notification.Status, OrderNotificationStatus.Pending)
+                .SetProperty(notification => notification.AttemptCount, 0)
+                .SetProperty(notification => notification.NextAttemptUtc, now)
+                .SetProperty(notification => notification.LastError, (string?)null));
+        TempData["OrderNotice"] = count == 0
+            ? "There are no failed emails to retry."
+            : "The failed email has been queued for another delivery attempt.";
         return RedirectToAction(nameof(Details), new { id });
     }
 
