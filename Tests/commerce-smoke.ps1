@@ -15,7 +15,8 @@ $buyer = New-Object Microsoft.PowerShell.Commands.WebRequestSession
 $stranger = New-Object Microsoft.PowerShell.Commands.WebRequestSession
 $login = Get-Page '/admin/login' $admin
 $signedIn = Post-Page '/admin/login' @{ Email=$AdminEmail; Password=$AdminPassword; __RequestVerificationToken=(Token $login.Content) } $admin
-Assert ($signedIn.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/admin/products') 'admin login'
+Assert ($signedIn.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/admin') 'admin login'
+Assert ($signedIn.Content.Contains('STORE OVERVIEW') -and $signedIn.Content.Contains('Recent orders')) 'admin overview dashboard'
 $suffix = [Guid]::NewGuid().ToString('N').Substring(0, 8)
 $name = 'Commerce Smoke ' + $suffix
 $slug = 'commerce-smoke-' + $suffix
@@ -92,10 +93,13 @@ try {
     Assert ($retry.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq $savedPath) 'retry after cart clearing is idempotent'
     $reference=$savedPath.Split('/')[-1]
     $orders=Get-Page '/admin/orders' $admin
-    $orderId=[regex]::Match($orders.Content, 'href="/admin/orders/(\d+)"><h2>' + $reference).Groups[1].Value
+    $orderRow=[regex]::Match($orders.Content, '(?s)<tr>(?:(?!</tr>).)*' + $reference + '(?:(?!</tr>).)*</tr>').Value
+    $orderId=[regex]::Match($orderRow, 'href="/admin/orders/(\d+)"').Groups[1].Value
     Assert (![string]::IsNullOrEmpty($orderId)) 'saved order appears in admin'
     $order=Get-Page ("/admin/orders/$orderId") $admin
     Assert ($order.Content.Contains('buyer@example.com') -and $order.Content.Contains('Delivery address will be added after Stripe') -and $order.Content.Contains('$64.90')) 'admin can read pending delivery and amount snapshots'
+    $fulfillmentDenied=Post-Page ("/admin/orders/$orderId/fulfillment") @{FulfillmentStatus='Shipped';TrackingCarrier='USPS';TrackingNumber='QA123';__RequestVerificationToken=(Token $order.Content)} $admin
+    Assert ($fulfillmentDenied.Content.Contains('only be updated after Stripe confirms payment') -and $fulfillmentDenied.Content.Contains('Payment not received')) 'unpaid orders cannot be fulfilled'
     Assert ((Get-Page '/admin/orders' $stranger).BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/admin/login') 'order administration requires authentication'
 
     $freeBuyer = New-Object Microsoft.PowerShell.Commands.WebRequestSession

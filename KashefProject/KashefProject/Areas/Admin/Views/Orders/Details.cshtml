@@ -1,17 +1,94 @@
 @model StoreOrder
 @{ ViewData["Title"] = Model.Reference; }
-<div class="editor-heading"><a href="/admin/orders">← All orders</a><h1>@Model.Reference</h1><p>@Model.CreatedUtc.ToString("yyyy-MM-dd HH:mm") UTC · @(Model.Status switch { OrderStatus.Paid => "Paid", OrderStatus.Cancelled => "Cancelled", _ => "Pending payment" })</p></div>
+
+<div class="editor-heading">
+    <a href="/admin/orders">← All orders</a>
+    <h1>@Model.Reference</h1>
+    <p>@Model.CreatedUtc.ToString("yyyy-MM-dd HH:mm") UTC · @(Model.Status switch { OrderStatus.Paid => "Paid", OrderStatus.Cancelled => "Cancelled", _ => "Pending payment" })</p>
+</div>
+
 @if (TempData["OrderNotice"] is string notice) { <p class="admin-notice">@notice</p> }
-<section class="editor-card">
-    @if (Model.Status == OrderStatus.Paid) { <h2>Payment verified</h2><p>Stripe confirmed this payment. This order is ready for fulfillment.</p><p>Items: @KashefProject.Models.StoreMoney.Format(Model.SubtotalCents) · Shipping: @KashefProject.Models.StoreMoney.Format(Model.ShippingCents ?? 0) · Tax: @KashefProject.Models.StoreMoney.Format(Model.TaxCents ?? 0)</p><strong>Total paid: @KashefProject.Models.StoreMoney.Format(Model.PaymentReceivedCents ?? Model.SubtotalCents) USD</strong><p>Paid @Model.PaidUtc?.ToString("yyyy-MM-dd HH:mm") UTC</p> }
-    else { <h2>Payment not received</h2><p>Do not fulfill this order until its status changes to Paid.</p><strong>Total before tax: @KashefProject.Models.StoreMoney.Format(Model.SubtotalCents + (Model.ShippingCents ?? 0)) USD</strong> }
+
+<div class="order-detail-grid">
+    <section class="editor-card order-payment-card">
+        @if (Model.Status == OrderStatus.Paid)
+        {
+            <span class="status-pill status-pill--paid">Payment verified</span>
+            <h2>Total paid</h2>
+            <strong class="order-total">@KashefProject.Models.StoreMoney.Format(Model.PaymentReceivedCents ?? Model.SubtotalCents)</strong>
+            <dl class="order-totals">
+                <div><dt>Items</dt><dd>@KashefProject.Models.StoreMoney.Format(Model.SubtotalCents)</dd></div>
+                <div><dt>Shipping</dt><dd>@KashefProject.Models.StoreMoney.Format(Model.ShippingCents ?? 0)</dd></div>
+                <div><dt>Tax</dt><dd>@KashefProject.Models.StoreMoney.Format(Model.TaxCents ?? 0)</dd></div>
+            </dl>
+            <small>Stripe confirmed payment @Model.PaidUtc?.ToString("MMM d, yyyy · HH:mm") UTC</small>
+        }
+        else
+        {
+            <span class="status-pill status-pill--@Model.Status.ToString().ToLowerInvariant()">@(Model.Status == OrderStatus.Cancelled ? "Cancelled" : "Pending payment")</span>
+            <h2>Payment not received</h2>
+            <p>Do not fulfill this order until Stripe confirms payment.</p>
+            <strong class="order-total">@KashefProject.Models.StoreMoney.Format(Model.SubtotalCents + (Model.ShippingCents ?? 0))</strong>
+            <small>Total before tax</small>
+        }
+    </section>
+
+    <section class="editor-card">
+        <h2>Customer & delivery</h2>
+        <p><strong>@Model.FullName</strong><br /><a href="mailto:@Model.Email">@Model.Email</a>@if (!string.IsNullOrWhiteSpace(Model.Phone)) { <br />@Model.Phone }</p>
+        @if (string.IsNullOrWhiteSpace(Model.AddressLine1))
+        {
+            <p class="subtle-copy">Delivery address will be added after Stripe confirms payment.</p>
+        }
+        else
+        {
+            <address>@Model.AddressLine1<br />@if (!string.IsNullOrWhiteSpace(Model.AddressLine2)) { @Model.AddressLine2<br /> }@Model.City, @Model.State @Model.PostalCode<br />United States</address>
+        }
+    </section>
+</div>
+
+@if (Model.Status == OrderStatus.Paid)
+{
+    <section class="editor-card fulfillment-card">
+        <div class="fulfillment-heading">
+            <div><span class="admin-eyebrow">FULFILLMENT</span><h2>Shipping progress</h2></div>
+            <span class="status-pill status-pill--@Model.FulfillmentStatus.ToString().ToLowerInvariant()">@Model.FulfillmentStatus</span>
+        </div>
+        <form class="editor-grid" method="post" action="/admin/orders/@Model.Id/fulfillment">
+            @Html.AntiForgeryToken()
+            <label>Status
+                <select name="FulfillmentStatus">
+                    @foreach (var status in Enum.GetValues<FulfillmentStatus>())
+                    {
+                        <option value="@status" selected="@(status == Model.FulfillmentStatus)">@status</option>
+                    }
+                </select>
+            </label>
+            <label>Shipping carrier<input name="TrackingCarrier" maxlength="80" value="@Model.TrackingCarrier" placeholder="USPS, UPS, FedEx…" /></label>
+            <label class="full">Tracking number<input name="TrackingNumber" maxlength="120" value="@Model.TrackingNumber" placeholder="Required when marked Shipped" /></label>
+            <label class="full">Private order notes<textarea name="AdminNotes" maxlength="1000" rows="4" placeholder="Production details, packing notes, customer request…">@Model.AdminNotes</textarea></label>
+            <div class="full fulfillment-meta">
+                @if (Model.ShippedUtc is not null) { <span>Shipped @Model.ShippedUtc.Value.ToString("MMM d, yyyy · HH:mm") UTC</span> }
+                @if (Model.DeliveredUtc is not null) { <span>Delivered @Model.DeliveredUtc.Value.ToString("MMM d, yyyy · HH:mm") UTC</span> }
+            </div>
+            <div class="editor-actions full"><button class="admin-primary" type="submit">Save fulfillment</button></div>
+        </form>
+    </section>
+}
+
+<section class="editor-card order-lines-card">
+    <h2>Ordered pieces</h2>
+    <p class="subtle-copy">These details are saved with the order and do not change when products are edited.</p>
+    @foreach (var line in Model.Lines)
+    {
+        <article class="order-line"><div><h3>@line.ProductName</h3><p>@line.Size · @line.Finish</p></div><strong>@line.Quantity × @KashefProject.Models.StoreMoney.Format(line.UnitPriceCents)</strong><span>@KashefProject.Models.StoreMoney.Format(line.Quantity * line.UnitPriceCents)</span></article>
+    }
 </section>
-<section class="editor-card"><h2>Customer & delivery</h2><p>@Model.FullName<br />@Model.Email<br />@Model.Phone</p>@if (string.IsNullOrWhiteSpace(Model.AddressLine1)) { <p>Delivery address will be added after Stripe confirms payment.</p> } else { <p>@Model.AddressLine1<br />@Model.AddressLine2<br />@Model.City, @Model.State @Model.PostalCode<br />United States</p> }</section>
-<section class="editor-card"><h2>Ordered pieces</h2><p>These details are saved with the order and do not change when products are edited.</p>
-    @foreach (var line in Model.Lines) { <article style="border-top:1px solid #ccc;padding:18px 0"><h3>@line.ProductName</h3><p>@line.Size · @line.Finish</p><p>@line.Quantity × @KashefProject.Models.StoreMoney.Format(line.UnitPriceCents) = @KashefProject.Models.StoreMoney.Format(line.Quantity * line.UnitPriceCents)</p></article> }
-</section>
+
 @if (Model.Status == OrderStatus.PendingPayment)
 {
-    <form method="post" action="/admin/orders/@Model.Id/sync-payment" style="display:inline-block;margin-right:12px">@Html.AntiForgeryToken()<button class="admin-primary" type="submit">Check Stripe payment</button></form>
-    <form method="post" action="/admin/orders/@Model.Id/cancel" onsubmit="return confirm('Cancel this unpaid order?');">@Html.AntiForgeryToken()<button class="admin-primary" type="submit">Cancel unpaid order</button></form>
+    <div class="order-actions">
+        <form method="post" action="/admin/orders/@Model.Id/sync-payment">@Html.AntiForgeryToken()<button class="admin-primary" type="submit">Check Stripe payment</button></form>
+        <form method="post" action="/admin/orders/@Model.Id/cancel" onsubmit="return confirm('Cancel this unpaid order?');">@Html.AntiForgeryToken()<button class="admin-secondary" type="submit">Cancel unpaid order</button></form>
+    </div>
 }

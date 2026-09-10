@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace KashefProject.Data;
 
 public enum OrderStatus { PendingPayment, Paid, Cancelled }
+public enum FulfillmentStatus { Pending, Processing, Shipped, Delivered }
 
 public sealed class StoreOrder
 {
@@ -12,6 +13,12 @@ public sealed class StoreOrder
     public Guid CheckoutKey { get; set; }
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
     public OrderStatus Status { get; set; } = OrderStatus.PendingPayment;
+    public FulfillmentStatus FulfillmentStatus { get; set; } = FulfillmentStatus.Pending;
+    [MaxLength(80)] public string? TrackingCarrier { get; set; }
+    [MaxLength(120)] public string? TrackingNumber { get; set; }
+    [MaxLength(1000)] public string? AdminNotes { get; set; }
+    public DateTime? ShippedUtc { get; set; }
+    public DateTime? DeliveredUtc { get; set; }
     [MaxLength(120)] public required string FullName { get; set; }
     [MaxLength(254)] public required string Email { get; set; }
     [MaxLength(30)] public string? Phone { get; set; }

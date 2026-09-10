@@ -1,9 +1,73 @@
 @model IReadOnlyList<StoreOrder>
-@{ ViewData["Title"] = "Orders"; var page = (int)ViewData["Page"]!; }
-<div class="admin-page-heading"><div><span class="admin-eyebrow">STORE ORDERS</span><h1>Orders</h1><p>Only orders marked Paid have been verified through Stripe and are ready for fulfillment.</p></div></div>
-@if (Model.Count == 0) { <section class="editor-card"><h2>No orders yet</h2><p>Orders saved at checkout will appear here.</p></section> }
-@foreach (var order in Model)
-{
-    <article class="editor-card"><a href="/admin/orders/@order.Id"><h2>@order.Reference</h2></a><p>@order.FullName · @order.CreatedUtc.ToString("yyyy-MM-dd HH:mm") UTC</p><p>@(order.Status switch { OrderStatus.Paid => "Paid", OrderStatus.Cancelled => "Cancelled", _ => "Pending payment" }) · @(order.Status == OrderStatus.Paid ? "Total" : "Before-tax total") @KashefProject.Models.StoreMoney.Format(order.Status == OrderStatus.Paid ? order.PaymentReceivedCents ?? order.SubtotalCents : order.SubtotalCents + (order.ShippingCents ?? 0))</p><a href="/admin/orders/@order.Id">View order →</a></article>
+@{
+    ViewData["Title"] = "Orders";
+    var page = (int)ViewData["Page"]!;
+    var query = (string)ViewData["Query"]!;
+    var payment = (string)ViewData["Payment"]!;
+    var fulfillment = (string)ViewData["Fulfillment"]!;
+    static string PaymentLabel(StoreOrder order) => order.Status switch
+    {
+        OrderStatus.Paid => "Paid",
+        OrderStatus.Cancelled => "Cancelled",
+        _ => "Pending payment"
+    };
 }
-<nav aria-label="Order pages" class="editor-actions">@if (page > 1) { <a href="/admin/orders?page=@(page - 1)">← Previous</a> } @if ((bool)ViewData["HasNext"]!) { <a href="/admin/orders?page=@(page + 1)">Next →</a> }</nav>
+
+<div class="admin-page-heading">
+    <div><span class="admin-eyebrow">STORE ORDERS</span><h1>Orders</h1><p>Find payments, fulfill paid orders, and keep tracking details together.</p></div>
+</div>
+
+<form class="order-filters" method="get" action="/admin/orders">
+    <label class="order-search">Search<input type="search" name="q" value="@query" placeholder="Order, customer, email, tracking…" /></label>
+    <label>Payment
+        <select name="payment">
+            <option value="">All payments</option>
+            <option value="paid" selected="@(payment == "paid")">Paid</option>
+            <option value="pending" selected="@(payment == "pending")">Pending</option>
+            <option value="cancelled" selected="@(payment == "cancelled")">Cancelled</option>
+        </select>
+    </label>
+    <label>Fulfillment
+        <select name="fulfillment">
+            <option value="">All statuses</option>
+            <option value="open" selected="@(fulfillment == "open")">Needs fulfillment</option>
+            <option value="pending" selected="@(fulfillment == "pending")">Pending</option>
+            <option value="processing" selected="@(fulfillment == "processing")">Processing</option>
+            <option value="shipped" selected="@(fulfillment == "shipped")">Shipped</option>
+            <option value="delivered" selected="@(fulfillment == "delivered")">Delivered</option>
+        </select>
+    </label>
+    <button class="admin-primary" type="submit">Apply filters</button>
+    @if (!string.IsNullOrWhiteSpace(query) || !string.IsNullOrWhiteSpace(payment) || !string.IsNullOrWhiteSpace(fulfillment)) { <a class="filter-clear" href="/admin/orders">Clear</a> }
+</form>
+
+@if (Model.Count == 0)
+{
+    <section class="editor-card"><h2>No matching orders</h2><p>Try clearing the filters or searching a different customer or reference.</p></section>
+}
+else
+{
+    <div class="order-table-wrap">
+        <table class="order-table">
+            <thead><tr><th>Order</th><th>Customer</th><th>Payment</th><th>Fulfillment</th><th>Total</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var order in Model)
+            {
+                <tr>
+                    <td><strong>@order.Reference</strong><small>@order.CreatedUtc.ToString("MMM d, yyyy · HH:mm") UTC</small></td>
+                    <td>@order.FullName<small>@order.Email</small></td>
+                    <td><span class="status-pill status-pill--@order.Status.ToString().ToLowerInvariant()">@PaymentLabel(order)</span></td>
+                    <td>@if (order.Status == OrderStatus.Paid) { <span class="status-pill status-pill--@order.FulfillmentStatus.ToString().ToLowerInvariant()">@order.FulfillmentStatus</span> } else { <span class="muted-dash">—</span> }</td>
+                    <td>@KashefProject.Models.StoreMoney.Format(order.Status == OrderStatus.Paid ? order.PaymentReceivedCents ?? order.SubtotalCents : order.SubtotalCents + (order.ShippingCents ?? 0))</td>
+                    <td><a class="table-link" href="/admin/orders/@order.Id">View →</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+<nav aria-label="Order pages" class="editor-actions">
+    @if (page > 1) { <a asp-action="Index" asp-route-page="@(page - 1)" asp-route-q="@query" asp-route-payment="@payment" asp-route-fulfillment="@fulfillment">← Previous</a> }
+    @if ((bool)ViewData["HasNext"]!) { <a asp-action="Index" asp-route-page="@(page + 1)" asp-route-q="@query" asp-route-payment="@payment" asp-route-fulfillment="@fulfillment">Next →</a> }
+</nav>

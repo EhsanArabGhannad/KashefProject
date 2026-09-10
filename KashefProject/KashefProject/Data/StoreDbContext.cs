@@ -24,6 +24,7 @@ public sealed class StoreDbContext(DbContextOptions<StoreDbContext> options) : I
         builder.Entity<StoreOrder>().HasIndex(order => order.StripeCheckoutSessionId).IsUnique();
         builder.Entity<StoreOrder>().HasIndex(order => order.StripePaymentIntentId).IsUnique();
         builder.Entity<StoreOrder>().Property(order => order.Status).HasConversion<string>().HasMaxLength(24);
+        builder.Entity<StoreOrder>().Property(order => order.FulfillmentStatus).HasConversion<string>().HasMaxLength(24);
         builder.Entity<StoreOrderLine>().ToTable(table =>
         {
             table.HasCheckConstraint("CK_OrderLine_Quantity", "Quantity BETWEEN 1 AND 20");

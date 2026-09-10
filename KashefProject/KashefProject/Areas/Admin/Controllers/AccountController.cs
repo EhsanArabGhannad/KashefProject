@@ -15,7 +15,7 @@ public sealed class AccountController(SignInManager<IdentityUser> signInManager)
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return RedirectToAction("Index", "Products", new { area = "Admin" });
+            return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
         }
 
         return View(new LoginViewModel { ReturnUrl = returnUrl });
@@ -50,7 +50,7 @@ public sealed class AccountController(SignInManager<IdentityUser> signInManager)
             return LocalRedirect(model.ReturnUrl);
         }
 
-        return RedirectToAction("Index", "Products", new { area = "Admin" });
+        return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
     }
 
     [Authorize]

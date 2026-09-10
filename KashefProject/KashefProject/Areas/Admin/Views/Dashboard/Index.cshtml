@@ -1,0 +1,74 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Overview";
+    static string PaymentLabel(StoreOrder order) => order.Status switch
+    {
+        OrderStatus.Paid => "Paid",
+        OrderStatus.Cancelled => "Cancelled",
+        _ => "Pending payment"
+    };
+}
+
+<div class="admin-page-heading">
+    <div>
+        <span class="admin-eyebrow">STORE OVERVIEW</span>
+        <h1>Good overview.</h1>
+        <p>Sales, fulfillment, and recent activity in one place.</p>
+    </div>
+    <a class="admin-primary" href="/admin/products/create">Add product <span>→</span></a>
+</div>
+
+<section class="dashboard-stats" aria-label="Store summary">
+    <a class="dashboard-stat dashboard-stat--accent" href="/admin/orders?payment=paid">
+        <span>This month's revenue</span>
+        <strong>@KashefProject.Models.StoreMoney.Format(Model.RevenueThisMonthCents)</strong>
+        <small>@Model.PaidOrdersThisMonth paid @(Model.PaidOrdersThisMonth == 1 ? "order" : "orders")</small>
+    </a>
+    <a class="dashboard-stat" href="/admin/orders?fulfillment=open">
+        <span>To fulfill</span>
+        <strong>@Model.AwaitingFulfillment</strong>
+        <small>Paid orders not delivered</small>
+    </a>
+    <a class="dashboard-stat" href="/admin/orders?payment=pending">
+        <span>Pending payment</span>
+        <strong>@Model.PendingPayments</strong>
+        <small>Not ready to fulfill</small>
+    </a>
+    <a class="dashboard-stat" href="/admin/products">
+        <span>Live products</span>
+        <strong>@Model.PublishedProducts</strong>
+        <small>Published in the shop</small>
+    </a>
+</section>
+
+<section class="dashboard-section">
+    <div class="dashboard-section-heading">
+        <div><span class="admin-eyebrow">LATEST ACTIVITY</span><h2>Recent orders</h2></div>
+        <a href="/admin/orders">View all orders →</a>
+    </div>
+    @if (Model.RecentOrders.Count == 0)
+    {
+        <div class="editor-card"><h2>No orders yet</h2><p>New checkout activity will appear here.</p></div>
+    }
+    else
+    {
+        <div class="order-table-wrap">
+            <table class="order-table">
+                <thead><tr><th>Order</th><th>Customer</th><th>Payment</th><th>Fulfillment</th><th>Total</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var order in Model.RecentOrders)
+                {
+                    <tr>
+                        <td><strong>@order.Reference</strong><small>@order.CreatedUtc.ToString("MMM d, yyyy · HH:mm") UTC</small></td>
+                        <td>@order.FullName</td>
+                        <td><span class="status-pill status-pill--@order.Status.ToString().ToLowerInvariant()">@PaymentLabel(order)</span></td>
+                        <td>@if (order.Status == OrderStatus.Paid) { <span class="status-pill status-pill--@order.FulfillmentStatus.ToString().ToLowerInvariant()">@order.FulfillmentStatus</span> } else { <span class="muted-dash">—</span> }</td>
+                        <td>@KashefProject.Models.StoreMoney.Format(order.Status == OrderStatus.Paid ? order.PaymentReceivedCents ?? order.SubtotalCents : order.SubtotalCents + (order.ShippingCents ?? 0))</td>
+                        <td><a class="table-link" href="/admin/orders/@order.Id">View →</a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
