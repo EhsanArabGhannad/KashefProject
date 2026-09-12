@@ -27,14 +27,15 @@ builder.Services
         options.Lockout.MaxFailedAccessAttempts = 5;
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
         options.User.RequireUniqueEmail = true;
+        options.SignIn.RequireConfirmedEmail = true;
     })
     .AddEntityFrameworkStores<StoreDbContext>()
     .AddDefaultTokenProviders();
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath = "/admin/login";
-    options.AccessDeniedPath = "/admin/login";
-    options.Cookie.Name = builder.Environment.IsDevelopment() ? "Craftisma.Admin" : "__Host-Craftisma.Admin";
+    options.LoginPath = "/account/login";
+    options.AccessDeniedPath = "/account/login";
+    options.Cookie.Name = builder.Environment.IsDevelopment() ? "Craftisma.Auth" : "__Host-Craftisma.Auth";
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
         ? CookieSecurePolicy.SameAsRequest
@@ -42,12 +43,26 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
+    options.Events.OnRedirectToLogin = context =>
+    {
+        var loginPath = context.Request.Path.StartsWithSegments("/admin") ? "/admin/login" : "/account/login";
+        var returnUrl = context.Request.PathBase + context.Request.Path + context.Request.QueryString;
+        context.Response.Redirect(Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(loginPath, "returnUrl", returnUrl));
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        context.Response.Redirect(context.Request.Path.StartsWithSegments("/admin") ? "/admin/login" : "/account/");
+        return Task.CompletedTask;
+    };
 });
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(24));
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CartOwner>();
 builder.Services.AddScoped<ShoppingService>();
 builder.Services.AddScoped<CheckoutService>();
+builder.Services.AddScoped<AccountEmailService>();
 builder.Services.AddOptions<FulfillmentOptions>()
     .Bind(builder.Configuration.GetSection(FulfillmentOptions.SectionName))
     .Validate(options => options.OriginState == "VA", "The fulfillment origin must remain Virginia (VA).")
@@ -74,7 +89,7 @@ builder.Services.AddRateLimiter(options =>
         context.HttpContext.Response.ContentType = "text/plain; charset=utf-8";
         if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
             context.HttpContext.Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        await context.HttpContext.Response.WriteAsync("Too many requests. Please wait a few minutes, then return to your bag and try again.", cancellationToken);
+        await context.HttpContext.Response.WriteAsync("Too many requests. Please wait a few minutes and try again.", cancellationToken);
     };
     options.AddPolicy("cart", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -83,6 +98,12 @@ builder.Services.AddRateLimiter(options =>
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));
     options.AddPolicy("contact", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromHours(1), QueueLimit = 0 }));
+    options.AddPolicy("account", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 12, Window = TimeSpan.FromMinutes(15), QueueLimit = 0 }));
+    options.AddPolicy("recovery", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromHours(1), QueueLimit = 0 }));
 });

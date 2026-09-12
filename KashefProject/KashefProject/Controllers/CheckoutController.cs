@@ -2,12 +2,15 @@ using KashefProject.Data;
 using KashefProject.Models;
 using KashefProject.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace KashefProject.Controllers;
 
 [Route("checkout")]
+[Authorize]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class CheckoutController(
     CheckoutService checkout,
@@ -28,6 +31,9 @@ public sealed class CheckoutController(
     [RequestSizeLimit(32 * 1024)]
     public async Task<IActionResult> Index(CheckoutViewModel model)
     {
+        // The verified account email is authoritative; ignore any posted replacement.
+        ModelState.Remove(nameof(model.Email));
+        model.Email = User.FindFirstValue(ClaimTypes.Email) ?? "";
         if (ModelState.IsValid)
         {
             var result = await checkout.SubmitAsync(model);
@@ -65,10 +71,10 @@ public sealed class CheckoutController(
     [HttpGet("saved/{reference}")]
     public async Task<IActionResult> Saved(string reference)
     {
-        var hash = owner.GetHash();
-        if (hash is null) return NotFound();
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null) return Challenge();
         var order = await db.Orders.AsNoTracking().Include(item => item.Lines)
-            .SingleOrDefaultAsync(item => item.Reference == reference && item.OwnerHash == hash);
+            .SingleOrDefaultAsync(item => item.Reference == reference && item.CustomerUserId == userId);
         if (order is null) return NotFound();
         ViewData["PaymentsEnabled"] = payments.IsConfigured;
         return View(order);
@@ -77,10 +83,10 @@ public sealed class CheckoutController(
     [HttpPost("pay/{reference}"), ValidateAntiForgeryToken, EnableRateLimiting("checkout")]
     public async Task<IActionResult> Pay(string reference)
     {
-        var hash = owner.GetHash();
-        if (hash is null || !payments.IsConfigured) return NotFound();
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null || !payments.IsConfigured) return NotFound();
         var order = await db.Orders.Include(item => item.Lines)
-            .SingleOrDefaultAsync(item => item.Reference == reference && item.OwnerHash == hash);
+            .SingleOrDefaultAsync(item => item.Reference == reference && item.CustomerUserId == userId);
         if (order is null) return NotFound();
         if (order.Status == OrderStatus.Paid) return RedirectToAction(nameof(Saved), new { reference });
         if (order.Status == OrderStatus.Cancelled) return BadRequest();

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace KashefProject.Data;
@@ -14,6 +15,7 @@ public sealed class StoreDbContext(DbContextOptions<StoreDbContext> options) : I
     public DbSet<StoreOrderLine> OrderLines => Set<StoreOrderLine>();
     public DbSet<OrderNotification> OrderNotifications => Set<OrderNotification>();
     public DbSet<ContactInquiry> ContactInquiries => Set<ContactInquiry>();
+    public DbSet<CustomerProfile> CustomerProfiles => Set<CustomerProfile>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -22,6 +24,9 @@ public sealed class StoreDbContext(DbContextOptions<StoreDbContext> options) : I
         builder.Entity<ShoppingCartItem>().HasIndex(item => new { item.ShoppingCartId, item.ProductId }).IsUnique();
         builder.Entity<ShoppingCartItem>().ToTable(table => table.HasCheckConstraint("CK_CartItem_Quantity", "Quantity BETWEEN 1 AND 20"));
         builder.Entity<StoreOrder>().HasIndex(order => order.Reference).IsUnique();
+        builder.Entity<StoreOrder>().HasIndex(order => new { order.CustomerUserId, order.CreatedUtc });
+        builder.Entity<StoreOrder>().HasOne<IdentityUser>().WithMany()
+            .HasForeignKey(order => order.CustomerUserId).OnDelete(DeleteBehavior.SetNull);
         builder.Entity<StoreOrder>().HasIndex(order => order.CheckoutKey).IsUnique();
         builder.Entity<StoreOrder>().HasIndex(order => order.StripeCheckoutSessionId).IsUnique();
         builder.Entity<StoreOrder>().HasIndex(order => order.StripePaymentIntentId).IsUnique();
@@ -36,6 +41,9 @@ public sealed class StoreDbContext(DbContextOptions<StoreDbContext> options) : I
         builder.Entity<ContactInquiry>().Property(inquiry => inquiry.NotificationStatus).HasConversion<string>().HasMaxLength(24);
         builder.Entity<ContactInquiry>().HasIndex(inquiry => new { inquiry.NotificationStatus, inquiry.NextAttemptUtc });
         builder.Entity<ContactInquiry>().HasIndex(inquiry => new { inquiry.Status, inquiry.CreatedUtc });
+        builder.Entity<CustomerProfile>().HasIndex(profile => profile.UserId).IsUnique();
+        builder.Entity<CustomerProfile>().HasOne<IdentityUser>().WithOne()
+            .HasForeignKey<CustomerProfile>(profile => profile.UserId).OnDelete(DeleteBehavior.Cascade);
         builder.Entity<StoreOrderLine>().ToTable(table =>
         {
             table.HasCheckConstraint("CK_OrderLine_Quantity", "Quantity BETWEEN 1 AND 20");

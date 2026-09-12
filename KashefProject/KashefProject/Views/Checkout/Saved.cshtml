@@ -12,7 +12,7 @@
             else { <h2>No payment has been received yet.</h2><p style="line-height:1.8;margin:20px 0">Your order details are saved, but production will not begin until payment is verified.</p>
                 @if ((bool?)ViewData["PaymentsEnabled"] == true) { <form method="post" action="/checkout/pay/@Model.Reference">@Html.AntiForgeryToken()<button class="button button-dark" type="submit">Pay securely with Stripe <span>→</span></button></form> }
             }
-            <p>Keep your order reference for any questions.</p><a class="button button-dark" style="margin-top:28px" href="/shop/">Back to the collection <span>↗</span></a>
+            <p>This order is saved in your account.</p><a class="button button-dark" style="margin-top:28px" href="/account/">View order history <span>→</span></a>@if (Model.Status == KashefProject.Data.OrderStatus.Paid) { <a class="button" href="/account/orders/@Model.Reference/invoice">Printable invoice <span>↗</span></a> }
         </section>
         <aside class="commerce-summary"><span class="commerce-eyebrow">ORDER · USD</span>
             @foreach (var line in Model.Lines) { <div class="commerce-mini-line"><span>@line.ProductName × @line.Quantity</span><strong>@StoreMoney.Format(line.UnitPriceCents * line.Quantity)</strong></div> }

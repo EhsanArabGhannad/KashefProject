@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Security.Claims;
 using System.Text;
 using KashefProject.Data;
 using KashefProject.Models;
@@ -13,6 +14,18 @@ public sealed class CartOwner(IHttpContextAccessor accessor, IWebHostEnvironment
     {
         if (ownerHash is not null) return ownerHash;
         var context = accessor.HttpContext!;
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            ownerHash = Hash($"user:{userId}");
+            return ownerHash;
+        }
+        return GetGuestHash(create);
+    }
+
+    public string? GetGuestHash(bool create = false)
+    {
+        var context = accessor.HttpContext!;
         var cookieName = environment.IsDevelopment() ? "Craftisma.Bag" : "__Host-Craftisma.Bag";
         var token = context.Request.Cookies[cookieName];
         if (token is null || token.Length != 64 || !token.All(Uri.IsHexDigit))
@@ -25,9 +38,24 @@ public sealed class CartOwner(IHttpContextAccessor accessor, IWebHostEnvironment
                 Path = "/", MaxAge = TimeSpan.FromDays(30), IsEssential = true
             });
         }
-        ownerHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
-        return ownerHash;
+        // Keep the original guest-cart hash format so bags created before
+        // customer accounts were introduced continue to work after deployment.
+        return Hash(token);
     }
+
+    public static string ForUser(string userId) => Hash($"user:{userId}");
+
+    public void ClearGuestCookie()
+    {
+        var cookieName = environment.IsDevelopment() ? "Craftisma.Bag" : "__Host-Craftisma.Bag";
+        accessor.HttpContext!.Response.Cookies.Delete(cookieName, new CookieOptions
+        {
+            Secure = !environment.IsDevelopment(), SameSite = SameSiteMode.Lax, Path = "/"
+        });
+    }
+
+    private static string Hash(string value) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 }
 
 public sealed class ShoppingService(StoreDbContext db, CartOwner owner)
@@ -97,5 +125,41 @@ public sealed class ShoppingService(StoreDbContext db, CartOwner owner)
         await db.SaveChangesAsync();
         await transaction.CommitAsync();
         return null;
+    }
+
+    public async Task MergeGuestCartAsync(string? guestHash, string userId)
+    {
+        if (string.IsNullOrWhiteSpace(guestHash)) return;
+        var userHash = CartOwner.ForUser(userId);
+        if (guestHash == userHash) return;
+
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        var guest = await db.ShoppingCarts.Include(cart => cart.Items)
+            .SingleOrDefaultAsync(cart => cart.OwnerHash == guestHash);
+        if (guest is null) return;
+        var account = await db.ShoppingCarts.Include(cart => cart.Items)
+            .SingleOrDefaultAsync(cart => cart.OwnerHash == userHash);
+        if (account is null)
+        {
+            guest.OwnerHash = userHash;
+            guest.Revision = Guid.NewGuid();
+            guest.UpdatedUtc = DateTime.UtcNow;
+        }
+        else
+        {
+            foreach (var guestLine in guest.Items)
+            {
+                var accountLine = account.Items.SingleOrDefault(item => item.ProductId == guestLine.ProductId);
+                if (accountLine is not null)
+                    accountLine.Quantity = Math.Min(MaxQuantity, accountLine.Quantity + guestLine.Quantity);
+                else if (account.Items.Count < MaxLines)
+                    account.Items.Add(new ShoppingCartItem { ProductId = guestLine.ProductId, Quantity = guestLine.Quantity });
+            }
+            account.Revision = Guid.NewGuid();
+            account.UpdatedUtc = DateTime.UtcNow;
+            db.ShoppingCarts.Remove(guest);
+        }
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
     }
 }

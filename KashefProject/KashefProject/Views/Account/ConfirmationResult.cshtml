@@ -1,0 +1,7 @@
+@model bool
+@{ ViewData["Title"] = Model ? "Email confirmed" : "Confirmation failed"; var returnUrl = ViewData["ReturnUrl"] as string; }
+<main class="commerce-shell account-message">
+    <span class="commerce-eyebrow">ACCOUNT VERIFICATION</span><h1>@(Model ? "Email confirmed" : "That link did not work")<span>.</span></h1>
+    @if (Model) { <p>Your account is ready and you are now signed in. Any pieces already in your bag have been kept.</p><a class="button button-dark" href="@(returnUrl ?? "/account/")">@(returnUrl?.StartsWith("/checkout") == true ? "Continue checkout" : "Open your account") <span>→</span></a> }
+    else { <p>The confirmation link is invalid or has expired. Request a fresh link and try again.</p><a class="button button-dark" href="/account/resend-confirmation">Resend confirmation <span>→</span></a> }
+</main>

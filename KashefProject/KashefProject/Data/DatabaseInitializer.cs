@@ -77,6 +77,13 @@ public static class DatabaseInitializer
 
     private static async Task SeedAdministratorAsync(IServiceProvider services, IConfiguration configuration)
     {
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        if (!await roleManager.RoleExistsAsync("Customer"))
+        {
+            var customerRoleResult = await roleManager.CreateAsync(new IdentityRole("Customer"));
+            EnsureSucceeded(customerRoleResult, "creating the Customer role");
+        }
+
         var email = configuration["Admin:Email"]?.Trim();
         var password = configuration["Admin:Password"];
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
@@ -84,7 +91,6 @@ public static class DatabaseInitializer
             return;
         }
 
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         if (!await roleManager.RoleExistsAsync("Admin"))
         {
             var roleResult = await roleManager.CreateAsync(new IdentityRole("Admin"));

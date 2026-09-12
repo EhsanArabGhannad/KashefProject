@@ -1,0 +1,12 @@
+@model CustomerDashboardViewModel
+@{ ViewData["Title"] = "Your account"; }
+<main class="commerce-shell account-dashboard">
+    <div class="account-dashboard-head"><div><span class="commerce-eyebrow">YOUR ACCOUNT</span><h1>Hello, @Model.FullName<span>.</span></h1><p>@Model.Email</p></div><form method="post" action="/account/logout">@Html.AntiForgeryToken()<button class="text-button" type="submit">Sign out</button></form></div>
+    @if (TempData["AccountMessage"] is string message) { <p class="commerce-notice">@message</p> }
+    <nav class="account-nav" aria-label="Account settings"><a href="/account/profile">Edit profile</a><a href="/account/change-password">Change password</a><a href="/cart/">View bag</a></nav>
+    <div class="account-stats"><div><strong>@Model.Orders.Count</strong><span>Total orders</span></div><div><strong>@Model.PaidOrderCount</strong><span>Paid orders</span></div><div><strong>@StoreMoney.Format(Model.LifetimeSpendCents)</strong><span>Total paid</span></div></div>
+    <section class="account-orders"><div class="account-section-title"><span class="commerce-eyebrow">ORDER HISTORY</span><h2>Your orders</h2></div>
+        @if (Model.Orders.Count == 0) { <div class="commerce-empty"><h3>No orders yet.</h3><p>Your completed and pending orders will appear here.</p><a class="button button-dark" href="/shop/">Explore the collection <span>↗</span></a></div> }
+        else { <div class="order-list">@foreach (var order in Model.Orders) { <a class="order-card" href="/account/orders/@order.Reference"><div><span>@order.Reference</span><strong>@order.CreatedUtc.ToString("MMMM d, yyyy")</strong></div><div><span>@(order.Status == KashefProject.Data.OrderStatus.Paid ? "Paid" : order.Status == KashefProject.Data.OrderStatus.Cancelled ? "Cancelled" : "Payment pending")</span><strong>@StoreMoney.Format(order.Status == KashefProject.Data.OrderStatus.Paid ? order.PaymentReceivedCents ?? order.TotalCents ?? 0 : order.SubtotalCents + (order.ShippingCents ?? 0))</strong></div><b>→</b></a> }</div> }
+    </section>
+</main>

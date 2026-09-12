@@ -1,0 +1,19 @@
+@model CustomerRegisterViewModel
+@{ ViewData["Title"] = "Create your account"; }
+<main class="commerce-shell account-shell">
+    <a class="back-link" href="/shop/">← Back to shop</a>
+    <div class="account-layout">
+        <section class="account-intro"><span class="commerce-eyebrow">YOUR CRAFTISMA ACCOUNT</span><h1>Create an account<span>.</span></h1><p>Keep your bag, check out securely, and find every order in one place.</p></section>
+        <form method="post" action="/account/register" class="commerce-form account-form">
+            @Html.AntiForgeryToken()<input asp-for="ReturnUrl" type="hidden" /><div asp-validation-summary="All"></div>
+            <label class="full" asp-for="FullName">Full name<input asp-for="FullName" autocomplete="name" autofocus /><span asp-validation-for="FullName"></span></label>
+            <label class="full" asp-for="Email">Email address<input asp-for="Email" autocomplete="email" type="email" /><span asp-validation-for="Email"></span></label>
+            <label class="full" asp-for="Password">Password<input asp-for="Password" autocomplete="new-password" /><small>Use at least 12 characters with uppercase, lowercase, a number, and a symbol.</small><span asp-validation-for="Password"></span></label>
+            <label class="full" asp-for="ConfirmPassword">Confirm password<input asp-for="ConfirmPassword" autocomplete="new-password" /><span asp-validation-for="ConfirmPassword"></span></label>
+            <label class="full check-row"><input asp-for="AcceptPolicies" /><span>I agree to the <a href="/terms/" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
+            <button class="button button-dark full" type="submit">Create account <span>→</span></button>
+            <p class="full account-switch">Already have an account? <a href="/account/login@(Model.ReturnUrl is null ? "" : $"?returnUrl={Uri.EscapeDataString(Model.ReturnUrl)}")">Sign in</a></p>
+        </form>
+    </div>
+</main>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

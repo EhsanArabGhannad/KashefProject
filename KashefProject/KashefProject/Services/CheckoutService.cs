@@ -5,6 +5,7 @@ using KashefProject.Data;
 using KashefProject.Models;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace KashefProject.Services;
 
@@ -16,7 +17,9 @@ public sealed class CheckoutService(
     ShoppingService shopping,
     CartOwner owner,
     IDataProtectionProvider protection,
-    FulfillmentPolicy fulfillment)
+    FulfillmentPolicy fulfillment,
+    UserManager<IdentityUser> userManager,
+    IHttpContextAccessor httpContextAccessor)
 {
     private readonly IDataProtector protector = protection.CreateProtector("Craftisma.CheckoutReview.v1");
 
@@ -25,10 +28,15 @@ public sealed class CheckoutService(
 
     public async Task<CheckoutViewModel?> PrepareAsync(CheckoutViewModel? model = null)
     {
+        var user = await userManager.GetUserAsync(httpContextAccessor.HttpContext!.User);
+        if (user is null || !user.EmailConfirmed || string.IsNullOrWhiteSpace(user.Email)) return null;
         var cart = await shopping.FindCartAsync();
         var summary = await shopping.SummarizeAsync(cart);
         if (cart is null || !summary.CanCheckout) return null;
         model ??= new CheckoutViewModel();
+        var profile = await db.CustomerProfiles.AsNoTracking().SingleOrDefaultAsync(item => item.UserId == user.Id);
+        if (string.IsNullOrWhiteSpace(model.FullName)) model.FullName = profile?.FullName ?? "";
+        model.Email = user.Email;
         model.Summary = summary;
         model.ShippingCents = fulfillment.ShippingFor(summary.SubtotalCents);
         model.AutomaticTaxEnabled = fulfillment.AutomaticTaxEnabled;
@@ -39,6 +47,9 @@ public sealed class CheckoutService(
 
     public async Task<OrderSubmission> SubmitAsync(CheckoutViewModel model)
     {
+        var user = await userManager.GetUserAsync(httpContextAccessor.HttpContext!.User);
+        if (user is null || !user.EmailConfirmed || string.IsNullOrWhiteSpace(user.Email))
+            return new(null, "Please sign in with a confirmed account before checking out.");
         CheckoutReview? review;
         try { review = JsonSerializer.Deserialize<CheckoutReview>(protector.Unprotect(model.ReviewToken)); }
         catch (Exception exception) when (exception is CryptographicException or JsonException or FormatException)
@@ -62,8 +73,8 @@ public sealed class CheckoutService(
         var order = new StoreOrder
         {
             Reference = "CF-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(8)),
-            OwnerHash = hash, CheckoutKey = review.Revision,
-            FullName = model.FullName.Trim(), Email = model.Email.Trim(), Phone = model.Phone?.Trim(),
+            CustomerUserId = user.Id, OwnerHash = hash, CheckoutKey = review.Revision,
+            FullName = model.FullName.Trim(), Email = user.Email, Phone = model.Phone?.Trim(),
             // Stripe Checkout securely collects and validates the U.S. delivery address.
             AddressLine1 = "", City = "", State = "", PostalCode = "",
             SubtotalCents = summary.SubtotalCents,

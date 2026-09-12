@@ -19,6 +19,18 @@ Assert ($signedIn.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/admi
 Assert ($signedIn.Content.Contains('STORE OVERVIEW') -and $signedIn.Content.Contains('Recent orders')) 'admin overview dashboard'
 $suffix = [Guid]::NewGuid().ToString('N').Substring(0, 8)
 
+$registration = Get-Page '/account/register' $buyer
+Assert ($registration.Content.Contains('Create an account') -and ![string]::IsNullOrEmpty((Token $registration.Content))) 'customer registration page is available and CSRF protected'
+$customerEmail = "customer-$suffix@example.invalid"
+$registered = Post-Page '/account/register' @{FullName='Account Smoke';Email=$customerEmail;Password='Strong!Smoke123';ConfirmPassword='Strong!Smoke123';AcceptPolicies='true';__RequestVerificationToken=(Token $registration.Content)} $buyer
+Assert ($registered.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/account/check-email' -and $registered.Content.Contains('Check your email')) 'customer registration requires email confirmation'
+$unconfirmedLogin = Get-Page '/account/login' $buyer
+$unconfirmedResult = Post-Page '/account/login' @{Email=$customerEmail;Password='Strong!Smoke123';__RequestVerificationToken=(Token $unconfirmedLogin.Content)} $buyer
+Assert ($unconfirmedResult.Content.Contains('confirm your email')) 'unconfirmed customer cannot sign in'
+$forgot = Get-Page '/account/forgot-password' $stranger
+$forgotResult = Post-Page '/account/forgot-password' @{Email='missing@example.invalid';__RequestVerificationToken=(Token $forgot.Content)} $stranger
+Assert ($forgotResult.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/account/forgot-password-sent' -and $forgotResult.Content.Contains('If the address belongs')) 'password recovery does not reveal whether an account exists'
+
 $privacy = Get-Page '/privacy/' $buyer
 $terms = Get-Page '/terms/' $buyer
 $shippingPolicy = Get-Page '/shipping-returns/' $buyer
@@ -80,14 +92,16 @@ try {
     $badUpdate = Post-Page '/cart/update' @{productId=$id; quantity='-1'; __RequestVerificationToken=(Token $bag.Content)} $buyer
     Assert ($badUpdate.Content.Contains('$39.90')) 'negative quantity rejected'
     $checkout = Get-Page '/checkout/' $buyer
+    Assert ($checkout.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/account/login' -and $checkout.Content.Contains('Sign in to continue checkout')) 'guest checkout is disabled'
+    $checkoutLogin = Post-Page '/account/login' @{Email=$AdminEmail;Password=$AdminPassword;ReturnUrl='/checkout/';__RequestVerificationToken=(Token $checkout.Content)} $buyer
+    Assert ($checkoutLogin.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/checkout/' -and $checkoutLogin.Content.Contains('$39.90')) 'sign in preserves and transfers the guest bag'
+    $checkout = $checkoutLogin
     $review = Review $checkout.Content
     Assert (![string]::IsNullOrEmpty($review)) 'signed checkout review generated'
     Assert ($checkout.Content.Contains('/terms/') -and $checkout.Content.Contains('/shipping-returns/') -and $checkout.Content.Contains('7–10 business days')) 'checkout requires linked store policies and shows production timing'
     Assert ($checkout.Content.Contains('Standard U.S. shipping') -and $checkout.Content.Contains('$15.00') -and $checkout.Content.Contains('$54.90')) 'flat shipping included before payment'
-    $details = @{FullName='Local Test Customer';Email='buyer@example.com';AcknowledgePending='true';ReviewToken=$review;__RequestVerificationToken=(Token $checkout.Content);SubtotalCents='1';Country='ZZ';Status='Paid'}
-    $invalidDetails = $details.Clone(); $invalidDetails.Email='invalid'
-    $invalid = Post-Page '/checkout/' $invalidDetails $buyer
-    Assert ($invalid.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/checkout/' -and $invalid.Content.Contains('not a valid')) 'invalid customer information rejected'
+    Assert ($checkout.Content.Contains('readonly') -and $checkout.Content.Contains($AdminEmail)) 'checkout uses the verified account email'
+    $details = @{FullName='Local Test Customer';Email='attacker@example.com';AcknowledgePending='true';ReviewToken=$review;__RequestVerificationToken=(Token $checkout.Content);SubtotalCents='1';Country='ZZ';Status='Paid'}
 
     $editor = Get-Page ("/admin/products/$id/edit") $admin
     $form.Remove('NewImages'); $form.Id=$id; $form.PriceDollars='24.95'; $form.__RequestVerificationToken=Token $editor.Content
@@ -117,7 +131,7 @@ try {
         Assert ($savedHtml.Contains('$49.90') -and $savedHtml.Contains('$64.90') -and $savedHtml.Contains('Pending payment')) 'subtotal, shipping, and unpaid status are server controlled'
     } finally { $client.Dispose() }
     Assert ((Get-Page '/cart/' $buyer).Content.Contains('Your bag is empty')) 'successful save clears the bag'
-    Assert ([int](Get-Page $savedPath $stranger).StatusCode -eq 404) 'another visitor cannot read the order'
+    Assert ((Get-Page $savedPath $stranger).BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/account/login') 'another visitor cannot read the order'
     $retry=Post-Page '/checkout/' $details $buyer
     Assert ($retry.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq $savedPath) 'retry after cart clearing is idempotent'
     $reference=$savedPath.Split('/')[-1]
@@ -126,7 +140,11 @@ try {
     $orderId=[regex]::Match($orderRow, 'href="/admin/orders/(\d+)"').Groups[1].Value
     Assert (![string]::IsNullOrEmpty($orderId)) 'saved order appears in admin'
     $order=Get-Page ("/admin/orders/$orderId") $admin
-    Assert ($order.Content.Contains('buyer@example.com') -and $order.Content.Contains('Delivery address will be added after Stripe') -and $order.Content.Contains('$64.90')) 'admin can read pending delivery and amount snapshots'
+    Assert ($order.Content.Contains($AdminEmail) -and !$order.Content.Contains('attacker@example.com') -and $order.Content.Contains('Delivery address will be added after Stripe') -and $order.Content.Contains('$64.90')) 'verified account email and server amount snapshots are enforced'
+    $account = Get-Page '/account/' $buyer
+    Assert ($account.Content.Contains($reference) -and $account.Content.Contains('Your orders')) 'customer dashboard lists the saved order'
+    Assert ((Get-Page ("/account/orders/$reference") $buyer).Content.Contains('$64.90')) 'customer can open own order details'
+    Assert ([int](Get-Page ("/account/orders/$reference/invoice") $buyer).StatusCode -eq 404) 'invoice is not issued before payment'
     $fulfillmentDenied=Post-Page ("/admin/orders/$orderId/fulfillment") @{FulfillmentStatus='Shipped';TrackingCarrier='USPS';TrackingNumber='QA123';__RequestVerificationToken=(Token $order.Content)} $admin
     Assert ($fulfillmentDenied.Content.Contains('only be updated after Stripe confirms payment') -and $fulfillmentDenied.Content.Contains('Payment not received')) 'unpaid orders cannot be fulfilled'
     Assert ((Get-Page '/admin/orders' $stranger).BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/admin/login') 'order administration requires authentication'
@@ -134,7 +152,8 @@ try {
     $freeBuyer = New-Object Microsoft.PowerShell.Commands.WebRequestSession
     $freeProduct = Get-Page ("/shop/$slug/") $freeBuyer
     $freeBag = Post-Page '/cart/add' @{productId=$id;quantity='7';__RequestVerificationToken=(Token $freeProduct.Content)} $freeBuyer
-    $freeCheckout = Get-Page '/checkout/' $freeBuyer
+    $freeLogin = Get-Page '/account/login?returnUrl=%2Fcheckout%2F' $freeBuyer
+    $freeCheckout = Post-Page '/account/login' @{Email=$AdminEmail;Password=$AdminPassword;ReturnUrl='/checkout/';__RequestVerificationToken=(Token $freeLogin.Content)} $freeBuyer
     Assert ($freeCheckout.Content.Contains('Standard U.S. shipping') -and $freeCheckout.Content.Contains('Free') -and $freeCheckout.Content.Contains('$174.65')) 'free shipping threshold applied'
     Post-Page '/cart/update' @{productId=$id;quantity='0';__RequestVerificationToken=(Token $freeBag.Content)} $freeBuyer | Out-Null
 
@@ -144,8 +163,8 @@ try {
     $editor=Get-Page ("/admin/products/$id/edit") $admin
     $form.PriceDollars='99.95'; $form.IsPublished='false'; $form.Name=$name+' changed'; $form.__RequestVerificationToken=Token $editor.Content
     Post-Page ("/admin/products/$id/edit") $form $admin | Out-Null
-    $unavailable=Get-Page '/checkout/' $stranger
-    Assert ($unavailable.BaseResponse.RequestMessage.RequestUri.AbsolutePath.TrimEnd('/') -eq '/cart' -and $unavailable.Content.Contains('Unavailable')) 'unpublished products cannot be ordered'
+    $unavailable=Get-Page '/cart/' $stranger
+    Assert ($unavailable.Content.Contains('Unavailable')) 'unpublished products cannot be ordered'
     $order=Get-Page ("/admin/orders/$orderId") $admin
     Assert ($order.Content.Contains('$49.90') -and !$order.Content.Contains($name+' changed')) 'order snapshots survive catalog edits'
     Post-Page ("/admin/orders/$orderId/cancel") @{__RequestVerificationToken=(Token $order.Content)} $admin | Out-Null

@@ -1,0 +1,4 @@
+@model AccountEmailViewModel
+@{ ViewData["Title"] = "Resend confirmation"; }
+<main class="commerce-shell account-shell"><div class="account-layout"><section class="account-intro"><span class="commerce-eyebrow">EMAIL VERIFICATION</span><h1>Send a new link<span>.</span></h1><p>Enter the email address used for your account.</p></section><form method="post" action="/account/resend-confirmation" class="commerce-form account-form">@Html.AntiForgeryToken()<div asp-validation-summary="All"></div><label class="full" asp-for="Email">Email address<input asp-for="Email" type="email" autocomplete="email" autofocus /><span asp-validation-for="Email"></span></label><button class="button button-dark full" type="submit">Send confirmation <span>→</span></button><p class="full account-switch"><a href="/account/login">Back to sign in</a></p></form></div></main>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

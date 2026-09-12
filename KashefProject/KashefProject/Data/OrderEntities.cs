@@ -11,6 +11,7 @@ public sealed class StoreOrder
 {
     public int Id { get; set; }
     [MaxLength(32)] public required string Reference { get; set; }
+    [MaxLength(450)] public string? CustomerUserId { get; set; }
     [MaxLength(64)] public required string OwnerHash { get; set; }
     public Guid CheckoutKey { get; set; }
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;

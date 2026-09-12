@@ -1,0 +1,7 @@
+@{ ViewData["Title"] = "Check your email"; }
+<main class="commerce-shell account-message">
+    <span class="commerce-eyebrow">ONE MORE STEP</span><h1>Check your email<span>.</span></h1>
+    <p>If an unconfirmed account exists@(ViewData["Email"] is string email && !string.IsNullOrWhiteSpace(email) ? $" for {email}" : ""), we sent a secure confirmation link. Open it to activate your account.</p>
+    <p>The link expires after 24 hours. Check your spam folder if it does not arrive.</p>
+    <a class="button button-dark" href="/account/login">Return to sign in <span>→</span></a>
+</main>

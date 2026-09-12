@@ -13,6 +13,7 @@
         <button class="menu-button" type="button" data-nav-toggle aria-controls="main-navigation" aria-expanded="false">
             <span></span><span></span><span></span><b>Menu</b>
         </button>
+        <a class="account-button" href="@(User.Identity?.IsAuthenticated == true ? "/account/" : "/account/login")">@(User.Identity?.IsAuthenticated == true ? "Account" : "Sign in")</a>
         <a class="cart-button" href="/cart/" aria-label="Open shopping bag">
             <span>Bag</span>
             <b>@await Component.InvokeAsync("CartCount")</b>

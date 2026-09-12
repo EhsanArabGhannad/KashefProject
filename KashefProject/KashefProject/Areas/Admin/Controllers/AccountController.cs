@@ -7,15 +7,18 @@ namespace KashefProject.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Route("admin")]
-public sealed class AccountController(SignInManager<IdentityUser> signInManager) : Controller
+public sealed class AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager) : Controller
 {
     [AllowAnonymous]
     [HttpGet("login")]
-    public IActionResult Login(string? returnUrl = null)
+    public async Task<IActionResult> Login(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+            var current = await userManager.GetUserAsync(User);
+            return current is not null && await userManager.IsInRoleAsync(current, "Admin")
+                ? RedirectToAction("Index", "Dashboard", new { area = "Admin" })
+                : Redirect("/account/");
         }
 
         return View(new LoginViewModel { ReturnUrl = returnUrl });
@@ -31,11 +34,11 @@ public sealed class AccountController(SignInManager<IdentityUser> signInManager)
             return View(model);
         }
 
-        var result = await signInManager.PasswordSignInAsync(
-            model.Email,
-            model.Password,
-            model.RememberMe,
-            lockoutOnFailure: true);
+        var user = await userManager.FindByEmailAsync(model.Email.Trim());
+        var isAdmin = user is not null && await userManager.IsInRoleAsync(user, "Admin");
+        var result = isAdmin
+            ? await signInManager.PasswordSignInAsync(user!, model.Password, model.RememberMe, lockoutOnFailure: true)
+            : Microsoft.AspNetCore.Identity.SignInResult.Failed;
 
         if (!result.Succeeded)
         {

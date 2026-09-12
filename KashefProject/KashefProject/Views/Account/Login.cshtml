@@ -1,0 +1,18 @@
+@model CustomerLoginViewModel
+@{ ViewData["Title"] = "Sign in"; }
+<main class="commerce-shell account-shell">
+    <a class="back-link" href="/shop/">← Back to shop</a>
+    <div class="account-layout">
+        <section class="account-intro"><span class="commerce-eyebrow">WELCOME BACK</span><h1>Your account<span>.</span></h1><p>Sign in to continue checkout and view your order history.</p></section>
+        <form method="post" action="/account/login" class="commerce-form account-form">
+            @Html.AntiForgeryToken()<input asp-for="ReturnUrl" type="hidden" /><div asp-validation-summary="All"></div>
+            <label class="full" asp-for="Email">Email address<input asp-for="Email" autocomplete="username" type="email" autofocus /><span asp-validation-for="Email"></span></label>
+            <label class="full" asp-for="Password">Password<input asp-for="Password" autocomplete="current-password" /><span asp-validation-for="Password"></span></label>
+            <label class="full check-row"><input asp-for="RememberMe" /><span>Keep me signed in on this device</span></label>
+            <button class="button button-dark full" type="submit">Sign in <span>→</span></button>
+            <div class="full account-links"><a href="/account/forgot-password">Forgot password?</a><a href="/account/resend-confirmation">Resend confirmation email</a></div>
+            <p class="full account-switch">New to Craftisma? <a href="/account/register@(Model.ReturnUrl is null ? "" : $"?returnUrl={Uri.EscapeDataString(Model.ReturnUrl)}")">Create an account</a></p>
+        </form>
+    </div>
+</main>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
