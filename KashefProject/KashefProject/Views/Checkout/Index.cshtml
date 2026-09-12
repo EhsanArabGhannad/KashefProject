@@ -13,8 +13,8 @@
             <label class="full" asp-for="FullName">Full name<input asp-for="FullName" autocomplete="name" required /><span asp-validation-for="FullName"></span></label>
             <label asp-for="Email">Email<input asp-for="Email" autocomplete="email" type="email" required /><span asp-validation-for="Email"></span></label>
             <label asp-for="Phone">Phone (optional)<input asp-for="Phone" autocomplete="tel" type="tel" /><span asp-validation-for="Phone"></span></label>
-            <p class="full">Stripe will collect and validate the delivery address. Shipping is currently available within the United States only.</p>
-            <label class="full check-row"><input asp-for="AcknowledgePending" required /><span>I have reviewed my order and contact details.</span></label>
+            <p class="full">Stripe will collect and validate the delivery address. Shipping is currently available within the United States only. Most pieces ship after 7–10 business days of production, followed by an estimated 5–7 business days in transit.</p>
+            <label class="full check-row"><input asp-for="AcknowledgePending" required /><span>I have reviewed my order and agree to the <a href="/terms/" target="_blank" rel="noopener">Terms of Service</a> and <a href="/shipping-returns/" target="_blank" rel="noopener">Shipping &amp; Returns Policy</a>.</span></label>
             <button class="button button-dark full" type="submit">@(paymentsEnabled ? "Continue to secure payment" : "Save order — no payment") <span>→</span></button>
         </form>
         <aside class="commerce-summary">

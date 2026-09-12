@@ -8,7 +8,7 @@ public sealed class CheckoutViewModel
     [Required, StringLength(120), Display(Name = "Full name")] public string FullName { get; set; } = "";
     [Required, EmailAddress, StringLength(254)] public string Email { get; set; } = "";
     [Phone, StringLength(30)] public string? Phone { get; set; }
-    [Range(typeof(bool), "true", "true", ErrorMessage = "Please confirm that you reviewed your order and delivery details.")]
+    [Range(typeof(bool), "true", "true", ErrorMessage = "Please accept the store terms and shipping policy to continue.")]
     public bool AcknowledgePending { get; set; }
     public CartSummary Summary { get; set; } = new([]);
     public long ShippingCents { get; set; }

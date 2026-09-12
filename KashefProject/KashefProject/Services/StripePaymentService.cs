@@ -126,11 +126,11 @@ public sealed class StripePaymentService(
                         {
                             Minimum = new SessionShippingOptionShippingRateDataDeliveryEstimateMinimumOptions
                             {
-                                Unit = "business_day", Value = 5
+                                Unit = "business_day", Value = 12
                             },
                             Maximum = new SessionShippingOptionShippingRateDataDeliveryEstimateMaximumOptions
                             {
-                                Unit = "business_day", Value = 7
+                                Unit = "business_day", Value = 17
                             }
                         }
                     }

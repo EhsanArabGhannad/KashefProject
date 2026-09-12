@@ -19,6 +19,13 @@ Assert ($signedIn.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/admi
 Assert ($signedIn.Content.Contains('STORE OVERVIEW') -and $signedIn.Content.Contains('Recent orders')) 'admin overview dashboard'
 $suffix = [Guid]::NewGuid().ToString('N').Substring(0, 8)
 
+$privacy = Get-Page '/privacy/' $buyer
+$terms = Get-Page '/terms/' $buyer
+$shippingPolicy = Get-Page '/shipping-returns/' $buyer
+Assert ($privacy.Content.Contains('Privacy Policy') -and $privacy.Content.Contains('Stripe') -and $privacy.Content.Contains('Resend')) 'privacy policy discloses data practices and processors'
+Assert ($terms.Content.Contains('Terms of Service') -and $terms.Content.Contains('Commonwealth of Virginia')) 'store terms disclose governing terms'
+Assert ($shippingPolicy.Content.Contains('7–10 business days') -and $shippingPolicy.Content.Contains('$15') -and $shippingPolicy.Content.Contains('$150') -and $shippingPolicy.Content.Contains('30 calendar days')) 'shipping and returns policy matches store configuration'
+
 $contactName = 'Contact Smoke ' + $suffix
 $contact = Get-Page '/contact/' $buyer
 Assert ($contact.Content.Contains('START A CONVERSATION') -and -not [string]::IsNullOrEmpty((Token $contact.Content))) 'contact form is server backed and CSRF protected'
@@ -75,6 +82,7 @@ try {
     $checkout = Get-Page '/checkout/' $buyer
     $review = Review $checkout.Content
     Assert (![string]::IsNullOrEmpty($review)) 'signed checkout review generated'
+    Assert ($checkout.Content.Contains('/terms/') -and $checkout.Content.Contains('/shipping-returns/') -and $checkout.Content.Contains('7–10 business days')) 'checkout requires linked store policies and shows production timing'
     Assert ($checkout.Content.Contains('Standard U.S. shipping') -and $checkout.Content.Contains('$15.00') -and $checkout.Content.Contains('$54.90')) 'flat shipping included before payment'
     $details = @{FullName='Local Test Customer';Email='buyer@example.com';AcknowledgePending='true';ReviewToken=$review;__RequestVerificationToken=(Token $checkout.Content);SubtotalCents='1';Country='ZZ';Status='Paid'}
     $invalidDetails = $details.Clone(); $invalidDetails.Email='invalid'

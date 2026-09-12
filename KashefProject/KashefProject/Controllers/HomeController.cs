@@ -23,7 +23,7 @@ namespace KashefProject.Controllers
 
         public IActionResult Privacy()
         {
-            return View();
+            return RedirectPermanent("/privacy/");
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
