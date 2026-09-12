@@ -73,10 +73,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.querySelector("[data-contact-form]")?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    event.currentTarget.reset();
-    showToast("Thanks — your demo inquiry is ready to send.");
-  });
-
 });

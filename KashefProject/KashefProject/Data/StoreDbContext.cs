@@ -13,6 +13,7 @@ public sealed class StoreDbContext(DbContextOptions<StoreDbContext> options) : I
     public DbSet<StoreOrder> Orders => Set<StoreOrder>();
     public DbSet<StoreOrderLine> OrderLines => Set<StoreOrderLine>();
     public DbSet<OrderNotification> OrderNotifications => Set<OrderNotification>();
+    public DbSet<ContactInquiry> ContactInquiries => Set<ContactInquiry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -30,6 +31,11 @@ public sealed class StoreDbContext(DbContextOptions<StoreDbContext> options) : I
         builder.Entity<OrderNotification>().Property(notification => notification.Status).HasConversion<string>().HasMaxLength(24);
         builder.Entity<OrderNotification>().HasIndex(notification => new { notification.StoreOrderId, notification.Kind }).IsUnique();
         builder.Entity<OrderNotification>().HasIndex(notification => new { notification.Status, notification.NextAttemptUtc });
+        builder.Entity<ContactInquiry>().HasIndex(inquiry => inquiry.Reference).IsUnique();
+        builder.Entity<ContactInquiry>().Property(inquiry => inquiry.Status).HasConversion<string>().HasMaxLength(24);
+        builder.Entity<ContactInquiry>().Property(inquiry => inquiry.NotificationStatus).HasConversion<string>().HasMaxLength(24);
+        builder.Entity<ContactInquiry>().HasIndex(inquiry => new { inquiry.NotificationStatus, inquiry.NextAttemptUtc });
+        builder.Entity<ContactInquiry>().HasIndex(inquiry => new { inquiry.Status, inquiry.CreatedUtc });
         builder.Entity<StoreOrderLine>().ToTable(table =>
         {
             table.HasCheckConstraint("CK_OrderLine_Quantity", "Quantity BETWEEN 1 AND 20");

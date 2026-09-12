@@ -18,6 +18,27 @@ $signedIn = Post-Page '/admin/login' @{ Email=$AdminEmail; Password=$AdminPasswo
 Assert ($signedIn.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/admin') 'admin login'
 Assert ($signedIn.Content.Contains('STORE OVERVIEW') -and $signedIn.Content.Contains('Recent orders')) 'admin overview dashboard'
 $suffix = [Guid]::NewGuid().ToString('N').Substring(0, 8)
+
+$contactName = 'Contact Smoke ' + $suffix
+$contact = Get-Page '/contact/' $buyer
+Assert ($contact.Content.Contains('START A CONVERSATION') -and -not [string]::IsNullOrEmpty((Token $contact.Content))) 'contact form is server backed and CSRF protected'
+$contactBlocked = Post-Page '/contact' @{Name=$contactName;Email='contact@example.com';Interest='Product question';Message='A valid message that must be blocked without its request token.'} $buyer
+Assert ([int]$contactBlocked.StatusCode -eq 400) 'contact submission without CSRF rejected'
+$contactInvalid = Post-Page '/contact' @{Name=$contactName;Email='invalid';Interest='Product question';Message='short';__RequestVerificationToken=(Token $contact.Content)} $buyer
+Assert ($contactInvalid.Content.Contains('not a valid e-mail address') -and $contactInvalid.Content.Contains('minimum length')) 'contact fields validated on the server'
+$contact = Get-Page '/contact/' $buyer
+$contactSent = Post-Page '/contact' @{Name=$contactName;Email='contact@example.com';Interest='Product question';Message='I would like more details about a dimensional wall art piece.';__RequestVerificationToken=(Token $contact.Content)} $buyer
+Assert ($contactSent.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/contact/thanks' -and $contactSent.Content.Contains('Message received')) 'valid contact inquiry saved'
+$inquiries = Get-Page '/admin/inquiries' $admin
+$inquiryRow = [regex]::Match($inquiries.Content, '(?s)<tr[^>]*>(?:(?!</tr>).)*' + $contactName + '(?:(?!</tr>).)*</tr>').Value
+$inquiryId = [regex]::Match($inquiryRow, '/admin/inquiries/(\d+)').Groups[1].Value
+Assert (![string]::IsNullOrEmpty($inquiryId) -and $inquiryRow.Contains('Pending')) 'contact inquiry appears in admin with queued email'
+$inquiryDetail = Get-Page ("/admin/inquiries/$inquiryId") $admin
+Assert ($inquiryDetail.Content.Contains('contact@example.com') -and $inquiryDetail.Content.Contains('dimensional wall art')) 'admin can read contact inquiry'
+$archivedInquiry = Post-Page ("/admin/inquiries/$inquiryId/archive") @{__RequestVerificationToken=(Token $inquiryDetail.Content)} $admin
+$archivedList = Get-Page '/admin/inquiries?status=archived' $admin
+Assert ($archivedList.Content.Contains($contactName)) 'admin can archive contact inquiry'
+
 $name = 'Commerce Smoke ' + $suffix
 $slug = 'commerce-smoke-' + $suffix
 $editor = Get-Page '/admin/products/create' $admin

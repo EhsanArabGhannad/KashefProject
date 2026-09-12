@@ -28,6 +28,7 @@ public sealed class DashboardController(StoreDbContext db, IOptions<EmailDeliver
                 order.FulfillmentStatus != FulfillmentStatus.Delivered),
             PendingPayments = await db.Orders.CountAsync(order => order.Status == OrderStatus.PendingPayment),
             PublishedProducts = await db.Products.CountAsync(product => product.IsPublished),
+            NewInquiries = await db.ContactInquiries.CountAsync(inquiry => inquiry.Status == ContactInquiryStatus.New),
             EmailConfigured = emailOptions.Value.IsConfigured,
             RecentOrders = await db.Orders.AsNoTracking().OrderByDescending(order => order.Id).Take(6).ToListAsync()
         });

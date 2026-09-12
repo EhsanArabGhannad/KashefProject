@@ -9,6 +9,7 @@ public sealed class AdminDashboardViewModel
     public int AwaitingFulfillment { get; init; }
     public int PendingPayments { get; init; }
     public int PublishedProducts { get; init; }
+    public int NewInquiries { get; init; }
     public bool EmailConfigured { get; init; }
     public IReadOnlyList<StoreOrder> RecentOrders { get; init; } = [];
 }

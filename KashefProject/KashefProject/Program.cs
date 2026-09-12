@@ -65,6 +65,7 @@ builder.Services.AddHttpClient<ITransactionalEmailSender, ResendEmailSender>(cli
 });
 builder.Services.AddScoped<OrderNotificationQueue>();
 builder.Services.AddHostedService<OrderNotificationWorker>();
+builder.Services.AddHostedService<ContactInquiryWorker>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -81,6 +82,9 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy("checkout", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));
+    options.AddPolicy("contact", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromHours(1), QueueLimit = 0 }));
 });
 
 var uploadRootSetting = builder.Configuration["Storage:UploadRoot"] ?? "App_Data/uploads";

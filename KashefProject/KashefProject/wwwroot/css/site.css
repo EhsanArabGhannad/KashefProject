@@ -352,6 +352,14 @@ h2 { font-size: clamp(3rem, 5vw, 5.3rem); letter-spacing: -.065em; line-height: 
 .contact-form textarea:focus { border-color: var(--ink); }
 .contact-form .button { margin-top: 28px; align-self: flex-start; }
 .contact-form > small { margin-top: 14px; color: #858178; font-size: .6rem; }
+.contact-form label small,.contact-validation { display:block; margin-top:7px; color:#a83d30; font-size:.67rem; }
+.contact-validation:empty,.contact-form label small:empty { display:none; }
+.contact-honeypot { position:absolute!important; width:1px!important; height:1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; }
+.contact-thanks { min-height:calc(100vh - 92px); padding:clamp(80px,12vw,170px) max(6vw,24px); background:var(--paper); }
+.contact-thanks h1 { max-width:1000px; margin:28px 0; font-size:clamp(4.5rem,10vw,10rem); }
+.contact-thanks h1 em { color:var(--orange); }
+.contact-thanks p { max-width:590px; color:#68635b; line-height:1.8; }
+.contact-thanks small { display:block; margin:24px 0; color:#777168; font:700 .7rem Arial,sans-serif; letter-spacing:.08em; }
 
 .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s ease, transform .8s cubic-bezier(.2,.8,.2,1); }
 .reveal.is-visible { opacity: 1; transform: none; }

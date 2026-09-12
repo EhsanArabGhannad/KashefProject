@@ -28,7 +28,8 @@ public sealed record TransactionalEmail(
     string Subject,
     string Html,
     string Text,
-    string IdempotencyKey);
+    string IdempotencyKey,
+    string? ReplyTo = null);
 
 public interface ITransactionalEmailSender
 {
@@ -55,7 +56,8 @@ public sealed class ResendEmailSender(HttpClient client, IOptions<EmailDeliveryO
             to = new[] { email.To },
             subject = email.Subject,
             html = email.Html,
-            text = email.Text
+            text = email.Text,
+            reply_to = email.ReplyTo
         });
         using var response = await client.SendAsync(request, cancellationToken);
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);

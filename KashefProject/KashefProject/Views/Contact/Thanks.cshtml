@@ -1,0 +1,15 @@
+@{
+    ViewData["Title"] = "Message received";
+    ViewData["Description"] = "Your message to Craftisma has been received.";
+    var reference = ViewData["Reference"] as string;
+}
+
+<main>
+    <section class="contact-thanks">
+        <span class="eyebrow"><i></i> Message received</span>
+        <h1>Thank you.<br /><em>We'll be in touch.</em></h1>
+        <p>Your inquiry is safely in our studio inbox. We usually reply within 1–2 business days.</p>
+        @if (!string.IsNullOrWhiteSpace(reference)) { <small>Reference @reference</small> }
+        <div><a class="button button-dark" href="/shop/">Continue exploring <span>→</span></a></div>
+    </section>
+</main>

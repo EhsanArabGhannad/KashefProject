@@ -1,3 +1,4 @@
+@model ContactInquiryViewModel
 @{
     ViewData["Title"] = "Contact";
     ViewData["Description"] = "Contact Craftisma about custom dimensional wall art, finish options, sizing, and made-to-order panels.";
@@ -15,31 +16,37 @@
                 <div><span>03</span><p>Your piece is printed, finished, and shipped.</p></div>
             </div>
         </div>
-        <form class="contact-form reveal" data-contact-form>
+        <form class="contact-form reveal" method="post" action="/contact" novalidate>
+            @Html.AntiForgeryToken()
             <div class="form-heading"><span>START A CONVERSATION</span><b>Usually replies within 1–2 business days.</b></div>
+            <div asp-validation-summary="ModelOnly" class="contact-validation" role="alert"></div>
             <label>
                 <span>Your name</span>
-                <input type="text" name="name" autocomplete="name" placeholder="Jane Smith" required />
+                <input asp-for="Name" autocomplete="name" placeholder="Jane Smith" />
+                <small asp-validation-for="Name"></small>
             </label>
             <label>
                 <span>Email address</span>
-                <input type="email" name="email" autocomplete="email" placeholder="jane@example.com" required />
+                <input asp-for="Email" autocomplete="email" placeholder="jane@example.com" />
+                <small asp-validation-for="Email"></small>
             </label>
             <label>
                 <span>What are you interested in?</span>
-                <select name="interest">
-                    <option>Custom color or size</option>
-                    <option>Original custom piece</option>
-                    <option>Product question</option>
-                    <option>Wholesale inquiry</option>
+                <select asp-for="Interest">
+                    @foreach (var interest in ContactInquiryViewModel.Interests) { <option value="@interest">@interest</option> }
                 </select>
+                <small asp-validation-for="Interest"></small>
             </label>
             <label>
                 <span>Tell us about your idea</span>
-                <textarea name="message" rows="6" placeholder="A few details about the piece, size, color, or space..." required></textarea>
+                <textarea asp-for="Message" rows="6" placeholder="A few details about the piece, size, color, or space..."></textarea>
+                <small asp-validation-for="Message"></small>
             </label>
+            <div class="contact-honeypot" aria-hidden="true"><label>Website<input asp-for="Website" tabindex="-1" autocomplete="off" /></label></div>
             <button class="button button-dark" type="submit">Send inquiry <span>→</span></button>
-            <small>This is a concept form for the demo storefront.</small>
+            <small>By sending this form, you agree that Craftisma may use these details to reply to your inquiry.</small>
         </form>
     </section>
 </main>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

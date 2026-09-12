@@ -1,0 +1,56 @@
+@model IReadOnlyList<ContactInquiry>
+@{
+    ViewData["Title"] = "Inquiries";
+    var page = (int)ViewData["Page"]!;
+    var query = (string)ViewData["Query"]!;
+    var status = (string)ViewData["Status"]!;
+}
+
+<div class="admin-page-heading">
+    <div><span class="admin-eyebrow">CUSTOMER MESSAGES</span><h1>Inquiries</h1><p>Review custom requests, questions, and wholesale conversations.</p></div>
+</div>
+
+<form class="order-filters inquiry-filters" method="get" action="/admin/inquiries">
+    <label class="order-search">Search<input type="search" name="q" value="@query" placeholder="Reference, name, email, topic…" /></label>
+    <label>Status
+        <select name="status">
+            <option value="" selected="@(status == "")">Active</option>
+            <option value="new" selected="@(status == "new")">New</option>
+            <option value="read" selected="@(status == "read")">Read</option>
+            <option value="archived" selected="@(status == "archived")">Archived</option>
+        </select>
+    </label>
+    <button class="admin-primary" type="submit">Apply filters</button>
+    @if (!string.IsNullOrWhiteSpace(query) || !string.IsNullOrWhiteSpace(status)) { <a class="filter-clear" href="/admin/inquiries">Clear</a> }
+</form>
+
+@if (Model.Count == 0)
+{
+    <section class="editor-card"><h2>No matching inquiries</h2><p>New contact messages will appear here.</p></section>
+}
+else
+{
+    <div class="order-table-wrap">
+        <table class="order-table inquiry-table">
+            <thead><tr><th>Reference</th><th>Customer</th><th>Topic</th><th>Status</th><th>Email alert</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var inquiry in Model)
+            {
+                <tr class="@(inquiry.Status == ContactInquiryStatus.New ? "inquiry-new" : "")">
+                    <td><strong>@inquiry.Reference</strong><small>@inquiry.CreatedUtc.ToString("MMM d, yyyy · HH:mm") UTC</small></td>
+                    <td>@inquiry.Name<small>@inquiry.Email</small></td>
+                    <td>@inquiry.Interest</td>
+                    <td><span class="status-pill status-pill--@inquiry.Status.ToString().ToLowerInvariant()">@inquiry.Status</span></td>
+                    <td><span class="status-pill status-pill--@inquiry.NotificationStatus.ToString().ToLowerInvariant()">@inquiry.NotificationStatus</span></td>
+                    <td><a class="table-link" href="/admin/inquiries/@inquiry.Id">Read →</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+<nav aria-label="Inquiry pages" class="editor-actions">
+    @if (page > 1) { <a asp-action="Index" asp-route-page="@(page - 1)" asp-route-q="@query" asp-route-status="@status">← Previous</a> }
+    @if ((bool)ViewData["HasNext"]!) { <a asp-action="Index" asp-route-page="@(page + 1)" asp-route-q="@query" asp-route-status="@status">Next →</a> }
+</nav>

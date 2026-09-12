@@ -1,0 +1,42 @@
+@model ContactInquiry
+@{
+    ViewData["Title"] = $"Inquiry {Model.Reference}";
+}
+
+<div class="editor-heading">
+    <a href="/admin/inquiries">← Back to inquiries</a>
+    <span class="admin-eyebrow">@Model.Interest</span>
+    <h1>@Model.Reference</h1>
+    <p>Received @Model.CreatedUtc.ToString("MMMM d, yyyy · HH:mm") UTC</p>
+</div>
+
+<section class="inquiry-detail-grid">
+    <article class="editor-card inquiry-message-card">
+        <span class="admin-eyebrow">MESSAGE</span>
+        <h2>@Model.Name</h2>
+        <p class="inquiry-copy">@Model.Message</p>
+    </article>
+    <aside class="editor-card inquiry-contact-card">
+        <span class="admin-eyebrow">CONTACT</span>
+        <h2>@Model.Name</h2>
+        <a href="mailto:@Model.Email?subject=Re:%20Craftisma%20inquiry%20@Model.Reference">@Model.Email</a>
+        <p><strong>Topic</strong><br />@Model.Interest</p>
+        <p><strong>Email alert</strong><br /><span class="status-pill status-pill--@Model.NotificationStatus.ToString().ToLowerInvariant()">@Model.NotificationStatus</span></p>
+        @if (Model.NotificationStatus == ContactInquiryNotificationStatus.Failed)
+        {
+            <form method="post" action="/admin/inquiries/@Model.Id/retry">@Html.AntiForgeryToken()<button class="admin-secondary" type="submit">Retry email alert</button></form>
+        }
+    </aside>
+</section>
+
+<div class="order-actions">
+    <a class="admin-primary" href="mailto:@Model.Email?subject=Re:%20Craftisma%20inquiry%20@Model.Reference">Reply by email</a>
+    @if (Model.Status == ContactInquiryStatus.Archived)
+    {
+        <form method="post" action="/admin/inquiries/@Model.Id/reopen">@Html.AntiForgeryToken()<button class="admin-secondary" type="submit">Move back to new</button></form>
+    }
+    else
+    {
+        <form method="post" action="/admin/inquiries/@Model.Id/archive">@Html.AntiForgeryToken()<button class="admin-secondary" type="submit">Archive inquiry</button></form>
+    }
+</div>
