@@ -8,6 +8,7 @@
     static string PaymentLabel(StoreOrder order) => order.Status switch
     {
         OrderStatus.Paid => "Paid",
+        OrderStatus.Refunded => "Refunded",
         OrderStatus.Cancelled => "Cancelled",
         _ => "Pending payment"
     };
@@ -23,6 +24,7 @@
         <select name="payment">
             <option value="">All payments</option>
             <option value="paid" selected="@(payment == "paid")">Paid</option>
+            <option value="refunded" selected="@(payment == "refunded")">Refunded</option>
             <option value="pending" selected="@(payment == "pending")">Pending</option>
             <option value="cancelled" selected="@(payment == "cancelled")">Cancelled</option>
         </select>
@@ -58,7 +60,7 @@ else
                     <td>@order.FullName<small>@order.Email</small></td>
                     <td><span class="status-pill status-pill--@order.Status.ToString().ToLowerInvariant()">@PaymentLabel(order)</span></td>
                     <td>@if (order.Status == OrderStatus.Paid) { <span class="status-pill status-pill--@order.FulfillmentStatus.ToString().ToLowerInvariant()">@order.FulfillmentStatus</span> } else { <span class="muted-dash">—</span> }</td>
-                    <td>@KashefProject.Models.StoreMoney.Format(order.Status == OrderStatus.Paid ? order.PaymentReceivedCents ?? order.SubtotalCents : order.SubtotalCents + (order.ShippingCents ?? 0))</td>
+                    <td>@KashefProject.Models.StoreMoney.Format(order.Status is OrderStatus.Paid or OrderStatus.Refunded ? order.PaymentReceivedCents ?? order.SubtotalCents : order.SubtotalCents + (order.ShippingCents ?? 0))</td>
                     <td><a class="table-link" href="/admin/orders/@order.Id">View →</a></td>
                 </tr>
             }

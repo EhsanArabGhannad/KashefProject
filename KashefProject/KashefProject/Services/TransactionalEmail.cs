@@ -105,6 +105,12 @@ public static class OrderEmailComposer
                 $"<p>Hi {encodedName},</p><p>Your Craftisma order has shipped.</p><p style=\"padding:18px;background:#f4f1ea;border-radius:14px\"><strong>{HtmlEncoder.Default.Encode(order.TrackingCarrier ?? "Shipping carrier")}</strong><br>Tracking number: <strong>{HtmlEncoder.Default.Encode(order.TrackingNumber ?? "")}</strong></p>{CustomerMessageHtml(order.CustomerMessage)}<p>Please allow the carrier some time to activate tracking.</p><p><a href=\"{publicUrl}/account/orders/{Uri.EscapeDataString(order.Reference)}\" style=\"color:#171716;font-weight:700\">View your order →</a></p>",
                 $"Hi {order.FullName},{Environment.NewLine}{Environment.NewLine}Your Craftisma order {order.Reference} has shipped.{Environment.NewLine}Carrier: {order.TrackingCarrier}{Environment.NewLine}Tracking number: {order.TrackingNumber}{CustomerMessageText(order.CustomerMessage)}{Environment.NewLine}{Environment.NewLine}Please allow the carrier some time to activate tracking.{Environment.NewLine}{publicUrl}/account/orders/{Uri.EscapeDataString(order.Reference)}",
                 $"craftisma_shipment_customer_{order.Reference}"),
+            OrderNotificationKind.RefundCustomer => Create(
+                order.Email,
+                $"Refund confirmed for order {order.Reference} — Craftisma",
+                $"<p>Hi {encodedName},</p><p>Your full refund for Craftisma order <strong>{encodedReference}</strong> has been confirmed.</p><p style=\"padding:18px;background:#f4f1ea;border-radius:14px;font-size:20px\"><strong>Refunded: {StoreMoney.Format(order.RefundedCents ?? order.PaymentReceivedCents ?? 0)}</strong></p><p>The refund is being returned to the original payment method. Your bank may take several business days to show it.</p><p><a href=\"{publicUrl}/account/orders/{Uri.EscapeDataString(order.Reference)}\" style=\"color:#171716;font-weight:700\">View your order →</a></p>",
+                $"Hi {order.FullName},{Environment.NewLine}{Environment.NewLine}Your full refund for Craftisma order {order.Reference} has been confirmed.{Environment.NewLine}Refunded: {StoreMoney.Format(order.RefundedCents ?? order.PaymentReceivedCents ?? 0)}{Environment.NewLine}{Environment.NewLine}The refund is being returned to the original payment method. Your bank may take several business days to show it.{Environment.NewLine}{publicUrl}/account/orders/{Uri.EscapeDataString(order.Reference)}",
+                $"craftisma_refund_customer_{order.Reference}"),
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
     }
@@ -131,6 +137,9 @@ public sealed class OrderNotificationQueue(StoreDbContext db)
 
     public Task QueueShipmentAsync(int orderId, CancellationToken cancellationToken = default) =>
         QueueAsync(orderId, [OrderNotificationKind.ShipmentCustomer], cancellationToken);
+
+    public Task QueueRefundAsync(int orderId, CancellationToken cancellationToken = default) =>
+        QueueAsync(orderId, [OrderNotificationKind.RefundCustomer], cancellationToken);
 
     private async Task QueueAsync(int orderId, IReadOnlyList<OrderNotificationKind> kinds, CancellationToken cancellationToken)
     {

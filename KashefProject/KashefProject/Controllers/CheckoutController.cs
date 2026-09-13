@@ -88,8 +88,7 @@ public sealed class CheckoutController(
         var order = await db.Orders.Include(item => item.Lines)
             .SingleOrDefaultAsync(item => item.Reference == reference && item.CustomerUserId == userId);
         if (order is null) return NotFound();
-        if (order.Status == OrderStatus.Paid) return RedirectToAction(nameof(Saved), new { reference });
-        if (order.Status == OrderStatus.Cancelled) return BadRequest();
+        if (order.Status != OrderStatus.PendingPayment) return RedirectToAction(nameof(Saved), new { reference });
         try
         {
             var session = await payments.StartAsync(order);

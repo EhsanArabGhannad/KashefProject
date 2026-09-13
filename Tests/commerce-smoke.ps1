@@ -145,6 +145,12 @@ try {
     Assert ($account.Content.Contains($reference) -and $account.Content.Contains('Your orders')) 'customer dashboard lists the saved order'
     Assert ((Get-Page ("/account/orders/$reference") $buyer).Content.Contains('$64.90')) 'customer can open own order details'
     Assert ([int](Get-Page ("/account/orders/$reference/invoice") $buyer).StatusCode -eq 404) 'invoice is not issued before payment'
+    $invalidRefund=Post-Page ("/admin/orders/$orderId/refund") @{reason='invalid';__RequestVerificationToken=(Token $order.Content)} $admin
+    Assert ($invalidRefund.Content.Contains('Choose a valid refund reason') -and $invalidRefund.Content.Contains('Payment not received')) 'refund rejects an invalid reason without changing the order'
+    $order=Get-Page ("/admin/orders/$orderId") $admin
+    $unpaidRefund=Post-Page ("/admin/orders/$orderId/refund") @{reason='requested_by_customer';__RequestVerificationToken=(Token $order.Content)} $admin
+    Assert ($unpaidRefund.Content.Contains('Only a paid order can be refunded') -and $unpaidRefund.Content.Contains('Payment not received')) 'refund rejects an unpaid order without contacting Stripe'
+    $order=Get-Page ("/admin/orders/$orderId") $admin
     $fulfillmentDenied=Post-Page ("/admin/orders/$orderId/fulfillment") @{FulfillmentStatus='Shipped';TrackingCarrier='USPS';TrackingNumber='QA123';__RequestVerificationToken=(Token $order.Content)} $admin
     Assert ($fulfillmentDenied.Content.Contains('only be updated after Stripe confirms payment') -and $fulfillmentDenied.Content.Contains('Payment not received')) 'unpaid orders cannot be fulfilled'
     Assert ((Get-Page '/admin/orders' $stranger).BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/admin/login') 'order administration requires authentication'

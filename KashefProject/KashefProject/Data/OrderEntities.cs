@@ -2,9 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace KashefProject.Data;
 
-public enum OrderStatus { PendingPayment, Paid, Cancelled }
+public enum OrderStatus { PendingPayment, Paid, Refunded, Cancelled }
 public enum FulfillmentStatus { Pending, Processing, Shipped, Delivered }
-public enum OrderNotificationKind { PaymentCustomer, PaymentAdmin, ShipmentCustomer }
+public enum OrderNotificationKind { PaymentCustomer, PaymentAdmin, ShipmentCustomer, RefundCustomer }
 public enum OrderNotificationStatus { Pending, Sending, Sent, Failed }
 
 public sealed class StoreOrder
@@ -40,8 +40,14 @@ public sealed class StoreOrder
     public long? TotalCents { get; set; }
     [MaxLength(255)] public string? StripeCheckoutSessionId { get; set; }
     [MaxLength(255)] public string? StripePaymentIntentId { get; set; }
+    [MaxLength(255)] public string? StripeRefundId { get; set; }
+    [MaxLength(32)] public string? StripeRefundStatus { get; set; }
+    [MaxLength(40)] public string? RefundReason { get; set; }
     public long? PaymentReceivedCents { get; set; }
+    public long? RefundedCents { get; set; }
     public DateTime? PaidUtc { get; set; }
+    public DateTime? RefundRequestedUtc { get; set; }
+    public DateTime? RefundedUtc { get; set; }
     public List<StoreOrderLine> Lines { get; set; } = [];
     public List<OrderNotification> Notifications { get; set; } = [];
 }

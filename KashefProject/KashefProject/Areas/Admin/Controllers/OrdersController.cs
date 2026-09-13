@@ -29,6 +29,7 @@ public sealed class OrdersController(
         query = payment?.ToLowerInvariant() switch
         {
             "paid" => query.Where(order => order.Status == OrderStatus.Paid),
+            "refunded" => query.Where(order => order.Status == OrderStatus.Refunded),
             "pending" => query.Where(order => order.Status == OrderStatus.PendingPayment),
             "cancelled" => query.Where(order => order.Status == OrderStatus.Cancelled),
             _ => query
@@ -64,6 +65,37 @@ public sealed class OrdersController(
         // Never offer a manual 'paid' action; payment status will come from the provider.
         await db.Orders.Where(order => order.Id == id && order.Status == OrderStatus.PendingPayment)
             .ExecuteUpdateAsync(update => update.SetProperty(order => order.Status, OrderStatus.Cancelled));
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost("{id:int}/refund"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> Refund(int id, string reason, CancellationToken cancellationToken)
+    {
+        if (!StripePaymentService.IsRefundReason(reason))
+        {
+            TempData["OrderNotice"] = "Choose a valid refund reason.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        try
+        {
+            var outcome = await payments.RefundOrderAsync(id, reason, cancellationToken);
+            TempData["OrderNotice"] = outcome.Complete
+                ? "The full refund was confirmed by Stripe. The customer email has been queued."
+                : outcome.Pending
+                    ? "Stripe accepted the full refund and it is pending. Use this button again later to check its status."
+                    : $"Stripe returned refund status '{outcome.Status}'. Review this payment in Stripe before trying again.";
+        }
+        catch (StripeException exception)
+        {
+            logger.LogWarning(exception, "Stripe rejected the refund for order {OrderId}.", id);
+            TempData["OrderNotice"] = "Stripe could not complete this refund. No order status was changed; review the payment in Stripe.";
+        }
+        catch (InvalidOperationException exception)
+        {
+            logger.LogWarning(exception, "Refund validation failed for order {OrderId}.", id);
+            TempData["OrderNotice"] = exception.Message;
+        }
         return RedirectToAction(nameof(Details), new { id });
     }
 

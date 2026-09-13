@@ -80,6 +80,7 @@ input:focus,select:focus,textarea:focus { outline:2px solid var(--orange); borde
 .status-pill--paid,.status-pill--delivered { color:#31551f; border-color:#abc891; background:#eff7e7; }
 .status-pill--pendingpayment,.status-pill--pending { color:#7a5419; border-color:#dfc58e; background:#fff7e6; }
 .status-pill--cancelled { color:#7d3931; border-color:#d8aaa2; background:#fff0ed; }
+.status-pill--refunded { color:#7d3931; border-color:#d8aaa2; background:#fff0ed; }
 .status-pill--processing { color:#335b72; border-color:#9fc0d1; background:#edf7fc; }
 .status-pill--shipped { color:#4d4380; border-color:#b9b0df; background:#f2efff; }
 .status-pill--sent { color:#31551f; border-color:#abc891; background:#eff7e7; }
@@ -119,6 +120,11 @@ input:focus,select:focus,textarea:focus { outline:2px solid var(--orange); borde
 .order-actions form { margin:0; }
 .admin-secondary { min-height:50px; padding:0 22px; border:1px solid var(--line); border-radius:999px; background:transparent; color:var(--ink); font:700 .92rem Manrope; cursor:pointer; }
 .admin-secondary:hover { background:white; }
+.admin-danger { min-height:50px; padding:0 22px; border:1px solid #a64235; border-radius:999px; background:#a64235; color:white; font:700 .92rem Manrope; cursor:pointer; }
+.admin-danger:hover { background:#85352c; }
+.refund-card { margin-top:18px; border-color:#d8aaa2; }
+.refund-form { display:flex; align-items:end; gap:14px; margin-top:20px; }
+.refund-form label { min-width:240px; }
 .inquiry-filters { grid-template-columns:minmax(260px,1.5fr) minmax(170px,.5fr) auto auto; }
 .inquiry-new td { background:#fffaf0; }
 .inquiry-detail-grid { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(280px,.5fr); gap:18px; }
@@ -128,4 +134,4 @@ input:focus,select:focus,textarea:focus { outline:2px solid var(--orange); borde
 .inquiry-contact-card p { margin:0; line-height:1.65; }
 @media (max-width:1000px) { .dashboard-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } .order-filters { grid-template-columns:1fr 1fr; } .order-search { grid-column:1/-1; } .filter-clear { align-self:center; } }
 @media (max-width:850px) { .admin-header { align-items:flex-start; gap:18px; } .admin-header nav { justify-content:flex-end; gap:14px; flex-wrap:wrap; } .product-admin-row { grid-template-columns:80px 1fr; } .product-admin-image { width:80px; height:80px; } .product-admin-state,.product-admin-actions { grid-column:2; } .editor-grid,.login-panel,.order-detail-grid,.inquiry-detail-grid { grid-template-columns:1fr; } .login-panel { gap:32px; } }
-@media (max-width:600px) { .admin-header nav a:first-child { display:none; } .admin-header { padding:12px 18px; } .admin-brand span { display:none; } .admin-shell { width:min(100% - 24px,1220px); padding-top:36px; } .admin-page-heading,.dashboard-section-heading { align-items:flex-start; flex-direction:column; } .dashboard-stats,.order-filters { grid-template-columns:1fr; } .order-search { grid-column:auto; } .dashboard-stat { min-height:145px; } .product-admin-row { grid-template-columns:64px 1fr; gap:12px; } .product-admin-image { width:64px; height:64px; } .product-admin-copy { display:block; } .product-admin-actions,.order-actions { align-items:stretch; flex-direction:column; } .product-admin-actions { flex-wrap:wrap; } .editor-card { padding:20px; } .order-line { grid-template-columns:1fr; gap:8px; } .order-line > span { text-align:left; } }
+@media (max-width:600px) { .admin-header nav a:first-child { display:none; } .admin-header { padding:12px 18px; } .admin-brand span { display:none; } .admin-shell { width:min(100% - 24px,1220px); padding-top:36px; } .admin-page-heading,.dashboard-section-heading { align-items:flex-start; flex-direction:column; } .dashboard-stats,.order-filters { grid-template-columns:1fr; } .order-search { grid-column:auto; } .dashboard-stat { min-height:145px; } .product-admin-row { grid-template-columns:64px 1fr; gap:12px; } .product-admin-image { width:64px; height:64px; } .product-admin-copy { display:block; } .product-admin-actions,.order-actions,.refund-form { align-items:stretch; flex-direction:column; } .refund-form label { min-width:0; } .product-admin-actions { flex-wrap:wrap; } .editor-card { padding:20px; } .order-line { grid-template-columns:1fr; gap:8px; } .order-line > span { text-align:left; } }

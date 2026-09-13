@@ -13,6 +13,7 @@ public sealed class StripePaymentOptions
 }
 
 public sealed record StripeCheckoutStart(string Url, string SessionId);
+public sealed record StripeRefundOutcome(bool Complete, bool Pending, string Status);
 
 public sealed class StripePaymentService(
     StoreDbContext db,
@@ -32,11 +33,14 @@ public sealed class StripePaymentService(
 
     public bool IsWebhookConfigured => IsConfigured && options.WebhookSecret.StartsWith("whsec_", StringComparison.Ordinal);
 
-    private SessionService Sessions()
+    private StripeClient Client()
     {
         if (!IsConfigured) throw new InvalidOperationException("Stripe payments are not configured.");
-        return new SessionService(new StripeClient(options.SecretKey));
+        return new StripeClient(options.SecretKey);
     }
+
+    private SessionService Sessions() => new(Client());
+    private RefundService Refunds() => new(Client());
 
     private string PublicUrl()
     {
@@ -48,8 +52,10 @@ public sealed class StripePaymentService(
 
     public async Task<StripeCheckoutStart> StartAsync(StoreOrder order)
     {
-        if (order.Status == OrderStatus.Cancelled) throw new InvalidOperationException("A cancelled order cannot be paid.");
-        if (order.Status == OrderStatus.Paid) throw new InvalidOperationException("This order is already paid.");
+        if (order.Status != OrderStatus.PendingPayment)
+            throw new InvalidOperationException(order.Status == OrderStatus.Paid
+                ? "This order is already paid."
+                : "This order cannot be paid.");
         if (order.Lines.Count == 0) throw new InvalidOperationException("This order has no items.");
 
         if (order.ShippingCents is null)
@@ -161,9 +167,8 @@ public sealed class StripePaymentService(
     {
         if (!IsConfigured) return false;
         var order = await db.Orders.SingleOrDefaultAsync(item => item.Id == orderId);
-        if (order is null || order.Status == OrderStatus.Cancelled || string.IsNullOrWhiteSpace(order.StripeCheckoutSessionId))
+        if (order is null || order.Status != OrderStatus.PendingPayment || string.IsNullOrWhiteSpace(order.StripeCheckoutSessionId))
             return false;
-        if (order.Status == OrderStatus.Paid) return true;
 
         var session = await Sessions().GetAsync(order.StripeCheckoutSessionId);
         await MarkPaidAsync(session);
@@ -188,7 +193,7 @@ public sealed class StripePaymentService(
         if (string.IsNullOrWhiteSpace(reference)) return;
 
         var order = await db.Orders.SingleOrDefaultAsync(item => item.Reference == reference);
-        if (order is null || order.Status == OrderStatus.Paid) return;
+        if (order is null || order.Status != OrderStatus.PendingPayment) return;
         if (!string.IsNullOrWhiteSpace(order.StripeCheckoutSessionId) && order.StripeCheckoutSessionId != session.Id)
         {
             logger.LogWarning("Rejected Stripe session {SessionId}: order {Reference} is linked to another session.", session.Id, reference);
@@ -236,5 +241,101 @@ public sealed class StripePaymentService(
         await db.SaveChangesAsync();
         await notifications.QueuePaymentAsync(order.Id);
         await transaction.CommitAsync();
+    }
+
+    public static bool IsRefundReason(string? reason) => reason is "requested_by_customer" or "duplicate" or "fraudulent";
+
+    public async Task<StripeRefundOutcome> RefundOrderAsync(
+        int orderId,
+        string reason,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsRefundReason(reason)) throw new InvalidOperationException("Choose a valid refund reason.");
+
+        var order = await db.Orders.SingleOrDefaultAsync(item => item.Id == orderId, cancellationToken)
+            ?? throw new InvalidOperationException("Order not found.");
+        if (order.Status == OrderStatus.Refunded)
+            return new(true, false, order.StripeRefundStatus ?? "succeeded");
+        if (order.Status != OrderStatus.Paid)
+            throw new InvalidOperationException("Only a paid order can be refunded.");
+        if (!IsConfigured) throw new InvalidOperationException("Stripe payments are not configured.");
+        if (string.IsNullOrWhiteSpace(order.StripePaymentIntentId))
+            throw new InvalidOperationException("This order is missing its Stripe payment reference.");
+
+        Stripe.Refund refund;
+        if (!string.IsNullOrWhiteSpace(order.StripeRefundId))
+        {
+            refund = await Refunds().GetAsync(order.StripeRefundId, cancellationToken: cancellationToken);
+        }
+        else
+        {
+            var amount = order.PaymentReceivedCents ?? order.TotalCents;
+            if (amount is null or <= 0) throw new InvalidOperationException("The paid amount is unavailable.");
+            refund = await Refunds().CreateAsync(new RefundCreateOptions
+            {
+                PaymentIntent = order.StripePaymentIntentId,
+                Amount = amount,
+                Reason = reason,
+                Metadata = new Dictionary<string, string>
+                {
+                    ["order_reference"] = order.Reference,
+                    ["refund_scope"] = "full"
+                }
+            }, new RequestOptions { IdempotencyKey = $"craftisma-refund-{order.Reference}" }, cancellationToken);
+        }
+
+        await ApplyRefundAsync(order, refund.Id, refund.Status, refund.Amount, reason, cancellationToken);
+        var complete = order.Status == OrderStatus.Refunded;
+        return new(complete, !complete && string.Equals(order.StripeRefundStatus, "pending", StringComparison.OrdinalIgnoreCase),
+            order.StripeRefundStatus ?? "unknown");
+    }
+
+    public async Task MarkRefundedAsync(Charge charge, CancellationToken cancellationToken = default)
+    {
+        if (!charge.Refunded || string.IsNullOrWhiteSpace(charge.PaymentIntentId)) return;
+        var order = await db.Orders.SingleOrDefaultAsync(
+            item => item.StripePaymentIntentId == charge.PaymentIntentId, cancellationToken);
+        if (order is null || order.Status is OrderStatus.Cancelled or OrderStatus.PendingPayment) return;
+
+        var latestRefund = charge.Refunds?.Data.OrderByDescending(item => item.Created).FirstOrDefault();
+        await ApplyRefundAsync(
+            order,
+            latestRefund?.Id ?? order.StripeRefundId ?? $"charge-{charge.Id}",
+            "succeeded",
+            charge.AmountRefunded,
+            latestRefund?.Reason ?? order.RefundReason ?? "requested_by_customer",
+            cancellationToken);
+    }
+
+    private async Task ApplyRefundAsync(
+        StoreOrder order,
+        string refundId,
+        string? refundStatus,
+        long refundedCents,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        var alreadyComplete = order.Status == OrderStatus.Refunded;
+        order.StripeRefundId = refundId;
+        order.StripeRefundStatus = refundStatus ?? "unknown";
+        order.RefundReason = reason;
+        order.RefundRequestedUtc ??= DateTime.UtcNow;
+        order.RefundedCents = refundedCents;
+
+        var paidCents = order.PaymentReceivedCents ?? order.TotalCents;
+        var isComplete = string.Equals(refundStatus, "succeeded", StringComparison.OrdinalIgnoreCase) &&
+            paidCents is > 0 && refundedCents >= paidCents;
+        if (!isComplete)
+        {
+            await db.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        order.Status = OrderStatus.Refunded;
+        order.RefundedUtc ??= DateTime.UtcNow;
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        if (!alreadyComplete) await notifications.QueueRefundAsync(order.Id, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 }

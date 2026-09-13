@@ -1,5 +1,6 @@
 using KashefProject.Services;
 using Microsoft.AspNetCore.Mvc;
+using Stripe;
 using Stripe.Checkout;
 
 namespace KashefProject.Controllers;
@@ -21,6 +22,8 @@ public sealed class StripeWebhookController(StripePaymentService payments, ILogg
             if (stripeEvent.Type is "checkout.session.completed" or "checkout.session.async_payment_succeeded" &&
                 stripeEvent.Data.Object is Session session)
                 await payments.MarkPaidAsync(session);
+            else if (stripeEvent.Type == "charge.refunded" && stripeEvent.Data.Object is Charge charge)
+                await payments.MarkRefundedAsync(charge);
             return Ok();
         }
         catch (Stripe.StripeException exception)

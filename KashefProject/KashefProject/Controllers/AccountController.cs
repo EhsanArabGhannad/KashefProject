@@ -247,7 +247,8 @@ public sealed class AccountController(
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var order = await db.Orders.AsNoTracking().Include(item => item.Lines)
-            .SingleOrDefaultAsync(item => item.Reference == reference && item.CustomerUserId == userId && item.Status == OrderStatus.Paid);
+            .SingleOrDefaultAsync(item => item.Reference == reference && item.CustomerUserId == userId &&
+                (item.Status == OrderStatus.Paid || item.Status == OrderStatus.Refunded));
         return order is null ? NotFound() : View(order);
     }
 

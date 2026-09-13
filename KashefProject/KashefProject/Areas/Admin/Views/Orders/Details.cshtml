@@ -4,24 +4,32 @@
 <div class="editor-heading">
     <a href="/admin/orders">← All orders</a>
     <h1>@Model.Reference</h1>
-    <p>@Model.CreatedUtc.ToString("yyyy-MM-dd HH:mm") UTC · @(Model.Status switch { OrderStatus.Paid => "Paid", OrderStatus.Cancelled => "Cancelled", _ => "Pending payment" })</p>
+    <p>@Model.CreatedUtc.ToString("yyyy-MM-dd HH:mm") UTC · @(Model.Status switch { OrderStatus.Paid => "Paid", OrderStatus.Refunded => "Refunded", OrderStatus.Cancelled => "Cancelled", _ => "Pending payment" })</p>
 </div>
 
 @if (TempData["OrderNotice"] is string notice) { <p class="admin-notice">@notice</p> }
 
 <div class="order-detail-grid">
     <section class="editor-card order-payment-card">
-        @if (Model.Status == OrderStatus.Paid)
+        @if (Model.Status is OrderStatus.Paid or OrderStatus.Refunded)
         {
-            <span class="status-pill status-pill--paid">Payment verified</span>
-            <h2>Total paid</h2>
-            <strong class="order-total">@KashefProject.Models.StoreMoney.Format(Model.PaymentReceivedCents ?? Model.SubtotalCents)</strong>
+            <span class="status-pill status-pill--@(Model.Status == OrderStatus.Refunded ? "refunded" : "paid")">@(Model.Status == OrderStatus.Refunded ? "Full refund confirmed" : "Payment verified")</span>
+            <h2>@(Model.Status == OrderStatus.Refunded ? "Total refunded" : "Total paid")</h2>
+            <strong class="order-total">@KashefProject.Models.StoreMoney.Format(Model.Status == OrderStatus.Refunded ? Model.RefundedCents ?? Model.PaymentReceivedCents ?? 0 : Model.PaymentReceivedCents ?? Model.SubtotalCents)</strong>
             <dl class="order-totals">
                 <div><dt>Items</dt><dd>@KashefProject.Models.StoreMoney.Format(Model.SubtotalCents)</dd></div>
                 <div><dt>Shipping</dt><dd>@KashefProject.Models.StoreMoney.Format(Model.ShippingCents ?? 0)</dd></div>
                 <div><dt>Tax</dt><dd>@KashefProject.Models.StoreMoney.Format(Model.TaxCents ?? 0)</dd></div>
             </dl>
-            <small>Stripe confirmed payment @Model.PaidUtc?.ToString("MMM d, yyyy · HH:mm") UTC</small>
+            @if (Model.Status == OrderStatus.Refunded)
+            {
+                <small>Stripe confirmed the refund @Model.RefundedUtc?.ToString("MMM d, yyyy · HH:mm") UTC · Reason: @((Model.RefundReason ?? "requested_by_customer").Replace('_', ' '))</small>
+            }
+            else
+            {
+                <small>Stripe confirmed payment @Model.PaidUtc?.ToString("MMM d, yyyy · HH:mm") UTC</small>
+                @if (Model.StripeRefundStatus == "pending") { <p class="subtle-copy">A full refund is pending at Stripe.</p> }
+            }
         }
         else
         {
@@ -77,6 +85,10 @@
         </form>
     </section>
 
+}
+
+@if (Model.Status is OrderStatus.Paid or OrderStatus.Refunded)
+{
     <section class="editor-card notification-card">
         <div class="fulfillment-heading">
             <div><span class="admin-eyebrow">AUTOMATIC EMAILS</span><h2>Delivery log</h2></div>
@@ -101,7 +113,8 @@
                 {
                     OrderNotificationKind.PaymentCustomer => "Order confirmation · customer",
                     OrderNotificationKind.PaymentAdmin => "New order alert · admin",
-                    _ => "Shipping confirmation · customer"
+                    OrderNotificationKind.ShipmentCustomer => "Shipping confirmation · customer",
+                    _ => "Refund confirmation · customer"
                 };
                 <div class="notification-row">
                     <div><strong>@label</strong><small>@(notification.SentUtc is null ? $"Queued {notification.CreatedUtc:MMM d, yyyy · HH:mm} UTC" : $"Sent {notification.SentUtc:MMM d, yyyy · HH:mm} UTC")</small></div>
@@ -128,4 +141,32 @@
         <form method="post" action="/admin/orders/@Model.Id/sync-payment">@Html.AntiForgeryToken()<button class="admin-primary" type="submit">Check Stripe payment</button></form>
         <form method="post" action="/admin/orders/@Model.Id/cancel" onsubmit="return confirm('Cancel this unpaid order?');">@Html.AntiForgeryToken()<button class="admin-secondary" type="submit">Cancel unpaid order</button></form>
     </div>
+}
+
+@if (Model.Status == OrderStatus.Paid)
+{
+    <section class="editor-card refund-card">
+        <span class="admin-eyebrow">REFUND</span>
+        <h2>@(Model.StripeRefundStatus == "pending" ? "Full refund pending" : "Issue a full refund")</h2>
+        <p class="subtle-copy">This sends the entire paid amount back through Stripe. A completed refund cannot be reversed in Craftisma.</p>
+        <form class="refund-form" method="post" action="/admin/orders/@Model.Id/refund" onsubmit="return confirm('Issue a FULL refund for order @Model.Reference? This cannot be undone.');">
+            @Html.AntiForgeryToken()
+            @if (Model.StripeRefundStatus == "pending")
+            {
+                <input type="hidden" name="reason" value="@(Model.RefundReason ?? "requested_by_customer")" />
+                <button class="admin-secondary" type="submit">Check refund status</button>
+            }
+            else
+            {
+                <label>Reason
+                    <select name="reason" required>
+                        <option value="requested_by_customer">Customer requested</option>
+                        <option value="duplicate">Duplicate payment</option>
+                        <option value="fraudulent">Fraudulent payment</option>
+                    </select>
+                </label>
+                <button class="admin-danger" type="submit">Refund @KashefProject.Models.StoreMoney.Format(Model.PaymentReceivedCents ?? Model.TotalCents ?? 0)</button>
+            }
+        </form>
+    </section>
 }
