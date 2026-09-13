@@ -66,7 +66,9 @@
             </label>
             <label>Shipping carrier<input name="TrackingCarrier" maxlength="80" value="@Model.TrackingCarrier" placeholder="USPS, UPS, FedEx…" /></label>
             <label class="full">Tracking number<input name="TrackingNumber" maxlength="120" value="@Model.TrackingNumber" placeholder="Required when marked Shipped" /></label>
-            <label class="full">Private order notes<textarea name="AdminNotes" maxlength="1000" rows="4" placeholder="Production details, packing notes, customer request…">@Model.AdminNotes</textarea></label>
+            <p class="subtle-copy full">A tracking number is saved immediately, but the shipping email is sent only when the status changes to <strong>Shipped</strong> or <strong>Delivered</strong>.</p>
+            <label class="full">Message for customer <small>Visible in the customer account and included in the shipping email.</small><textarea name="CustomerMessage" maxlength="1000" rows="3" placeholder="Delivery instructions or an update for the customer…">@Model.CustomerMessage</textarea></label>
+            <label class="full">Private order notes <small>Admin only. Never shown or emailed to the customer.</small><textarea name="AdminNotes" maxlength="1000" rows="4" placeholder="Production details, packing notes, internal customer request…">@Model.AdminNotes</textarea></label>
             <div class="full fulfillment-meta">
                 @if (Model.ShippedUtc is not null) { <span>Shipped @Model.ShippedUtc.Value.ToString("MMM d, yyyy · HH:mm") UTC</span> }
                 @if (Model.DeliveredUtc is not null) { <span>Delivered @Model.DeliveredUtc.Value.ToString("MMM d, yyyy · HH:mm") UTC</span> }

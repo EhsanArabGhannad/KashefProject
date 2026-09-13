@@ -14,5 +14,8 @@ public sealed class FulfillmentUpdateViewModel
     public string? TrackingNumber { get; set; }
 
     [StringLength(1000)]
+    public string? CustomerMessage { get; set; }
+
+    [StringLength(1000)]
     public string? AdminNotes { get; set; }
 }

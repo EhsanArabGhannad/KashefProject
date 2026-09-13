@@ -19,6 +19,7 @@ public sealed class StoreOrder
     public FulfillmentStatus FulfillmentStatus { get; set; } = FulfillmentStatus.Pending;
     [MaxLength(80)] public string? TrackingCarrier { get; set; }
     [MaxLength(120)] public string? TrackingNumber { get; set; }
+    [MaxLength(1000)] public string? CustomerMessage { get; set; }
     [MaxLength(1000)] public string? AdminNotes { get; set; }
     public DateTime? ShippedUtc { get; set; }
     public DateTime? DeliveredUtc { get; set; }

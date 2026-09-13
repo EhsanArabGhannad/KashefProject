@@ -82,6 +82,7 @@ public sealed class OrdersController(
 
         model.TrackingCarrier = model.TrackingCarrier?.Trim();
         model.TrackingNumber = model.TrackingNumber?.Trim();
+        model.CustomerMessage = model.CustomerMessage?.Trim();
         model.AdminNotes = model.AdminNotes?.Trim();
         if ((model.FulfillmentStatus is FulfillmentStatus.Shipped or FulfillmentStatus.Delivered) &&
             string.IsNullOrWhiteSpace(model.TrackingNumber))
@@ -98,6 +99,7 @@ public sealed class OrdersController(
         order.FulfillmentStatus = model.FulfillmentStatus;
         order.TrackingCarrier = model.TrackingCarrier;
         order.TrackingNumber = model.TrackingNumber;
+        order.CustomerMessage = model.CustomerMessage;
         order.AdminNotes = model.AdminNotes;
         if (model.FulfillmentStatus is FulfillmentStatus.Shipped or FulfillmentStatus.Delivered)
             order.ShippedUtc ??= now;

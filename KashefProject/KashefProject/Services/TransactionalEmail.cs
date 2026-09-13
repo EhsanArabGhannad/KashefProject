@@ -102,12 +102,20 @@ public static class OrderEmailComposer
             OrderNotificationKind.ShipmentCustomer => Create(
                 order.Email,
                 $"Your Craftisma order {order.Reference} is on the way",
-                $"<p>Hi {encodedName},</p><p>Your Craftisma order has shipped.</p><p style=\"padding:18px;background:#f4f1ea;border-radius:14px\"><strong>{HtmlEncoder.Default.Encode(order.TrackingCarrier ?? "Shipping carrier")}</strong><br>Tracking number: <strong>{HtmlEncoder.Default.Encode(order.TrackingNumber ?? "")}</strong></p><p>Please allow the carrier some time to activate tracking.</p>",
-                $"Hi {order.FullName},{Environment.NewLine}{Environment.NewLine}Your Craftisma order {order.Reference} has shipped.{Environment.NewLine}Carrier: {order.TrackingCarrier}{Environment.NewLine}Tracking number: {order.TrackingNumber}{Environment.NewLine}{Environment.NewLine}Please allow the carrier some time to activate tracking.",
+                $"<p>Hi {encodedName},</p><p>Your Craftisma order has shipped.</p><p style=\"padding:18px;background:#f4f1ea;border-radius:14px\"><strong>{HtmlEncoder.Default.Encode(order.TrackingCarrier ?? "Shipping carrier")}</strong><br>Tracking number: <strong>{HtmlEncoder.Default.Encode(order.TrackingNumber ?? "")}</strong></p>{CustomerMessageHtml(order.CustomerMessage)}<p>Please allow the carrier some time to activate tracking.</p><p><a href=\"{publicUrl}/account/orders/{Uri.EscapeDataString(order.Reference)}\" style=\"color:#171716;font-weight:700\">View your order →</a></p>",
+                $"Hi {order.FullName},{Environment.NewLine}{Environment.NewLine}Your Craftisma order {order.Reference} has shipped.{Environment.NewLine}Carrier: {order.TrackingCarrier}{Environment.NewLine}Tracking number: {order.TrackingNumber}{CustomerMessageText(order.CustomerMessage)}{Environment.NewLine}{Environment.NewLine}Please allow the carrier some time to activate tracking.{Environment.NewLine}{publicUrl}/account/orders/{Uri.EscapeDataString(order.Reference)}",
                 $"craftisma_shipment_customer_{order.Reference}"),
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
     }
+
+    private static string CustomerMessageHtml(string? message) => string.IsNullOrWhiteSpace(message)
+        ? ""
+        : $"<p><strong>Message from Craftisma</strong><br>{HtmlEncoder.Default.Encode(message).Replace(Environment.NewLine, "<br>")}</p>";
+
+    private static string CustomerMessageText(string? message) => string.IsNullOrWhiteSpace(message)
+        ? ""
+        : $"{Environment.NewLine}{Environment.NewLine}Message from Craftisma:{Environment.NewLine}{message}";
 
     private static TransactionalEmail Create(string to, string subject, string content, string text, string key) =>
         new(to, subject,
