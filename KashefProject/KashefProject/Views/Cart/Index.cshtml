@@ -21,14 +21,14 @@
                             <h2>@if (line.Available) { <a href="/shop/@line.Slug/">@line.Name</a> } else { @line.Name }</h2>
                             <p>@line.Finish</p>
                             <strong>@(line.Available ? StoreMoney.Format(line.UnitPriceCents!.Value) + " each" : "Unavailable — remove to continue")</strong>
-                            <form method="post" action="/cart/update" class="quantity-form">
+                            <form method="post" action="/cart/update" class="quantity-form" data-submit-once>
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="productId" value="@line.ProductId" />
                                 <label for="qty-@line.ProductId">Quantity</label>
-                                <input id="qty-@line.ProductId" name="quantity" type="number" min="1" max="20" value="@line.Quantity" required />
-                                <button type="submit">Update</button>
+                                <input id="qty-@line.ProductId" name="quantity" type="number" inputmode="numeric" min="1" max="20" value="@line.Quantity" required />
+                                <button type="submit" data-pending-label="Updating…">Update</button>
                             </form>
-                            <form method="post" action="/cart/update">@Html.AntiForgeryToken()<input type="hidden" name="productId" value="@line.ProductId" /><input type="hidden" name="quantity" value="0" /><button class="text-button" type="submit" aria-label="Remove @line.Name">Remove</button></form>
+                            <form method="post" action="/cart/update" data-submit-once>@Html.AntiForgeryToken()<input type="hidden" name="productId" value="@line.ProductId" /><input type="hidden" name="quantity" value="0" /><button class="text-button" type="submit" aria-label="Remove @line.Name" data-pending-label="Removing…">Remove</button></form>
                         </div>
                         <strong class="bag-line-total">@(line.Available ? StoreMoney.Format(line.LineTotalCents) : "—")</strong>
                     </article>

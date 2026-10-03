@@ -142,6 +142,21 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+// The browser must revalidate the worker and manifest when checking for app updates.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/service-worker.js" || context.Request.Path == "/manifest.webmanifest")
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers.CacheControl = "no-cache";
+            if (context.Request.Path == "/manifest.webmanifest")
+                context.Response.ContentType = "application/manifest+json";
+            return Task.CompletedTask;
+        });
+    }
+    await next();
+});
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(uploadRoot),

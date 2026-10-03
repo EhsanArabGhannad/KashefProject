@@ -11,7 +11,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     @if (Context.Request.Path.StartsWithSegments("/cart") || Context.Request.Path.StartsWithSegments("/checkout") || Context.Request.Path.StartsWithSegments("/account")) { <meta name="robots" content="noindex,nofollow" /><meta name="referrer" content="no-referrer" /> }
-    <meta name="theme-color" content="#f4f1ea" />
+    <meta name="theme-color" content="#f3f0e8" />
+    <!-- pwa:start -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Craftisma" />
+    <!-- pwa:end -->
     <meta name="description" content="@pageDescription" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="@pageTitle | Craftisma" />
@@ -30,6 +35,7 @@
     <link rel="stylesheet" href="~/css/commerce.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/account.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/refund.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <partial name="_SiteHeader" />
@@ -37,6 +43,9 @@
     <partial name="_SiteFooter" />
     <div class="toast" role="status" aria-live="polite" data-toast></div>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <!-- pwa:start -->
+    <script src="~/js/pwa.js" asp-append-version="true" defer></script>
+    <!-- pwa:end -->
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

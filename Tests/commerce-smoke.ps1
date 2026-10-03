@@ -135,6 +135,12 @@ try {
     $retry=Post-Page '/checkout/' $details $buyer
     Assert ($retry.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq $savedPath) 'retry after cart clearing is idempotent'
     $reference=$savedPath.Split('/')[-1]
+    $unprotectedStatus=Post-Page ("/checkout/status/$reference") @{} $buyer
+    Assert ([int]$unprotectedStatus.StatusCode -eq 400) 'payment status check requires CSRF protection'
+    $unstartedStatus=Post-Page ("/checkout/status/$reference") @{__RequestVerificationToken=$details.__RequestVerificationToken} $buyer
+    Assert ($unstartedStatus.BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq $savedPath -and $unstartedStatus.Content.Contains('Your order remains saved')) 'status check for an unstarted payment keeps the saved order accessible'
+    Assert ((Get-Page '/checkout/success?session_id=cs_unknown' $buyer).StatusCode -eq 404) 'unknown payment return cannot expose an order'
+    Assert ((Post-Page ("/checkout/status/$reference") @{} $stranger).BaseResponse.RequestMessage.RequestUri.AbsolutePath -eq '/account/login') 'payment status check requires sign in'
     $orders=Get-Page '/admin/orders' $admin
     $orderRow=[regex]::Match($orders.Content, '(?s)<tr>(?:(?!</tr>).)*' + $reference + '(?:(?!</tr>).)*</tr>').Value
     $orderId=[regex]::Match($orderRow, 'href="/admin/orders/(\d+)"').Groups[1].Value
@@ -161,7 +167,7 @@ try {
     $freeLogin = Get-Page '/account/login?returnUrl=%2Fcheckout%2F' $freeBuyer
     $freeCheckout = Post-Page '/account/login' @{Email=$AdminEmail;Password=$AdminPassword;ReturnUrl='/checkout/';__RequestVerificationToken=(Token $freeLogin.Content)} $freeBuyer
     Assert ($freeCheckout.Content.Contains('Standard U.S. shipping') -and $freeCheckout.Content.Contains('Free') -and $freeCheckout.Content.Contains('$174.65')) 'free shipping threshold applied'
-    Post-Page '/cart/update' @{productId=$id;quantity='0';__RequestVerificationToken=(Token $freeBag.Content)} $freeBuyer | Out-Null
+    Post-Page '/cart/update' @{productId=$id;quantity='0';__RequestVerificationToken=(Token $freeCheckout.Content)} $freeBuyer | Out-Null
 
     # Put a product in another bag, then unpublish it.
     $anotherProduct=Get-Page ("/shop/$slug/") $stranger

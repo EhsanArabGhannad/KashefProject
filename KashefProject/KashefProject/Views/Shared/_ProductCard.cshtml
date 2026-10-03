@@ -9,7 +9,7 @@
         </a>
         @if (Model.PriceCents > 0)
         {
-            <form method="post" action="/cart/add">@Html.AntiForgeryToken()<input type="hidden" name="productId" value="@Model.Id" /><button class="quick-add" type="submit" aria-label="Add @Model.Name to bag">＋</button></form>
+            <form method="post" action="/cart/add" data-submit-once>@Html.AntiForgeryToken()<input type="hidden" name="productId" value="@Model.Id" /><button class="quick-add" type="submit" aria-label="Add @Model.Name to bag" data-pending-label="…">＋</button></form>
         }
     </div>
     <a class="product-info" href="/shop/@Model.Slug/" aria-label="View @Model.Name details">

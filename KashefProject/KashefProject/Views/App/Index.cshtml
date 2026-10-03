@@ -1,0 +1,39 @@
+@{
+    ViewData["Title"] = "Craftisma on your phone";
+    ViewData["Description"] = "Add Craftisma to your home screen for quick access to the shop and your orders.";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+}
+<main class="app-guide">
+    <div class="app-intro">
+        <img src="/icons/icon-192.png" width="88" height="88" alt="Craftisma app icon" />
+        <span class="eyebrow"><i></i> ALWAYS CLOSE AT HAND</span>
+        <h1>A little art.<br /><em>One tap away.</em></h1>
+        <p>Add Craftisma to your home screen. Explore the collection, open your bag, and check your orders in one place.</p>
+        <button type="button" class="button button-dark" data-install-app hidden>Install Craftisma <span aria-hidden="true">↗</span></button>
+        <p class="app-status" data-install-status role="status">Choose the instructions below for your phone.</p>
+        <a class="text-link" href="/shop/">Explore the shop <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="app-instructions">
+        <section>
+            <span class="eyebrow">01 / IPHONE &amp; IPAD</span>
+            <h2>Add from Safari</h2>
+            <ol>
+                <li>Open Craftisma in Safari.</li>
+                <li>Open the Share menu and choose <strong>Add to Home Screen</strong>. You may need to scroll through the actions.</li>
+                <li>If shown, keep <strong>Open as Web App</strong> on, then tap <strong>Add</strong>.</li>
+            </ol>
+        </section>
+        <section>
+            <span class="eyebrow">02 / ANDROID</span>
+            <h2>Add from Chrome</h2>
+            <ol>
+                <li>Open Craftisma in Chrome.</li>
+                <li>Tap <strong>Install Craftisma</strong> above when available, or open Chrome's menu and choose <strong>Add to Home screen</strong> or <strong>Install app</strong>.</li>
+                <li>Confirm, then open Craftisma from your home screen.</li>
+            </ol>
+        </section>
+        <p class="app-connection">An internet connection is needed to browse products, sign in, and place or pay for an order. If the connection drops during payment, reconnect and check your order status before trying again.</p>
+    </div>
+</main>

@@ -8,8 +8,10 @@
         <a href="/gallery/">Gallery</a>
         <a href="/shop/">Shop</a>
         <a href="/contact/">Contact</a>
+        <partial name="_SocialLinks" model="@("nav-social")" />
     </nav>
     <div class="header-actions">
+        <partial name="_SocialLinks" model="@("header-social")" />
         <button class="menu-button" type="button" data-nav-toggle aria-controls="main-navigation" aria-expanded="false">
             <span></span><span></span><span></span><b>Menu</b>
         </button>

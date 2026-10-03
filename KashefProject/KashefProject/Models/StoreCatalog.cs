@@ -33,6 +33,8 @@ public sealed record ProductCategory(
 
 public sealed record CategoryPageViewModel(ProductCategory Category, IReadOnlyList<Product> Products);
 
+public sealed record ProductDetailViewModel(Product Product, IReadOnlyList<Product> RelatedProducts);
+
 public static class StoreCatalog
 {
     public static IReadOnlyList<ProductCategory> Categories { get; } =

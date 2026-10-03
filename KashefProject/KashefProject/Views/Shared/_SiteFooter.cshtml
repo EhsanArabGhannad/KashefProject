@@ -1,6 +1,7 @@
 <footer class="site-footer">
     <a class="brand brand--footer" href="/"><span class="brand-mark">C</span><span>Craftisma</span></a>
     <p>Small objects. Big shifts in mood.</p>
+    <partial name="_SocialLinks" model="@("footer-social")" />
     <div class="footer-links">
         <a href="/">Home</a>
         <a href="/gallery/">Gallery</a>
@@ -9,6 +10,9 @@
         <a href="/shipping-returns/">Shipping &amp; Returns</a>
         <a href="/terms/">Terms</a>
         <a href="/privacy/">Privacy</a>
+        <!-- pwa:start -->
+        <a href="/app/" data-app-link>Get the app</a>
+        <!-- pwa:end -->
     </div>
     <small>© 2026 Craftisma. All rights reserved.</small>
 </footer>

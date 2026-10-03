@@ -14,6 +14,17 @@ public class ShopController(ICatalogService catalog) : Controller
     public async Task<IActionResult> Product(string slug)
     {
         var product = await catalog.FindProductAsync(slug);
-        return product is null ? NotFound() : View(product);
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        var relatedProducts = (await catalog.GetProductsAsync())
+            .Where(candidate => candidate.Id != product.Id)
+            .OrderByDescending(candidate => candidate.CategorySlug == product.CategorySlug)
+            .Take(3)
+            .ToArray();
+
+        return View(new ProductDetailViewModel(product, relatedProducts));
     }
 }

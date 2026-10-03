@@ -1,24 +1,25 @@
-@model Product
+@model ProductDetailViewModel
 @{
-    ViewData["Title"] = Model.Name;
-    ViewData["Description"] = Model.Description;
+    var product = Model.Product;
+    ViewData["Title"] = product.Name;
+    ViewData["Description"] = product.Description;
     var publicUrl = Configuration["Site:PublicUrl"]?.TrimEnd('/') ?? "https://craftisma.net";
-    ViewData["OgImage"] = $"{publicUrl}{Model.ImagePath}";
+    ViewData["OgImage"] = $"{publicUrl}{product.ImagePath}";
 }
 
 <main>
     <section class="product-detail">
         <div class="product-gallery reveal" data-product-gallery>
-            <div class="product-main-image @Model.CardClass" data-gallery-main>
-                <img src="@Model.ImagePath" alt="@Model.ImageAlt" data-gallery-main-image />
+            <div class="product-main-image @product.CardClass" data-gallery-main>
+                <img src="@product.ImagePath" alt="@product.ImageAlt" data-gallery-main-image />
                 <span class="product-image-label" data-view-label>VIEW 01</span>
                 <span class="gallery-hint">Select a view below</span>
             </div>
             <div class="product-thumbnails" aria-label="Product image views">
-                @for (var index = 0; index < Model.Images.Count; index++)
+                @for (var index = 0; index < product.Images.Count; index++)
                 {
-                    var image = Model.Images[index];
-                    <button class="@(index == 0 ? "is-active" : null)" type="button" data-gallery-image data-gallery-label="VIEW @((index + 1).ToString("00"))" aria-label="Show @Model.Name view @(index + 1)">
+                    var image = product.Images[index];
+                    <button class="@(index == 0 ? "is-active" : null)" type="button" data-gallery-image data-gallery-label="VIEW @((index + 1).ToString("00"))" aria-label="Show @product.Name view @(index + 1)" aria-pressed="@(index == 0 ? "true" : "false")">
                         <img src="@image" alt="" />
                     </button>
                 }
@@ -27,24 +28,24 @@
 
         <div class="product-detail-copy reveal">
             <a class="back-link" href="/shop/">← Back to shop</a>
-            <span class="product-detail-category">@Model.CategoryName / @Model.Badge</span>
-            <h1>@Model.Name</h1>
-            <strong class="product-detail-price">@Model.Price</strong>
-            <p class="product-detail-description">@Model.Description</p>
+            <span class="product-detail-category">@product.CategoryName / @product.Badge</span>
+            <h1>@product.Name</h1>
+            <strong class="product-detail-price">@product.Price</strong>
+            <p class="product-detail-description">@product.Description</p>
 
             <div class="product-options">
                 <div class="product-finish-note">
                     <span>FINISH</span>
-                    <span>@Model.Finish</span>
+                    <span>@product.Finish</span>
                 </div>
             </div>
 
-            @if (Model.PriceCents > 0)
+            @if (product.PriceCents > 0)
             {
-                <form class="product-buy-form" method="post" action="/cart/add">
+                <form class="product-buy-form" method="post" action="/cart/add" data-submit-once>
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="productId" value="@Model.Id" />
-                    <button class="button button-dark product-add" type="submit">Add to bag <span>→</span></button>
+                    <input type="hidden" name="productId" value="@product.Id" />
+                    <button class="button button-dark product-add" type="submit" data-pending-label="Adding to bag…">Add to bag <span>→</span></button>
                 </form>
             }
             else
@@ -53,12 +54,12 @@
             }
 
             <dl class="product-specs">
-                <div><dt>Size</dt><dd>@Model.Size</dd></div>
-                <div><dt>Material</dt><dd>@Model.Material</dd></div>
-                <div><dt>Finish</dt><dd>@Model.Finish</dd></div>
+                <div><dt>Size</dt><dd>@product.Size</dd></div>
+                <div><dt>Material</dt><dd>@product.Material</dd></div>
+                <div><dt>Finish</dt><dd>@product.Finish</dd></div>
             </dl>
             <ul class="product-highlights">
-                @foreach (var highlight in Model.Highlights)
+                @foreach (var highlight in product.Highlights)
                 {
                     <li>@highlight</li>
                 }
@@ -66,9 +67,22 @@
         </div>
     </section>
 
-    <section class="detail-story reveal">
-        <span>MADE ONE LAYER AT A TIME</span>
-        <h2>A digital form,<br /><em>finished by hand.</em></h2>
-        <p>Small variations in the printed texture are part of the process—each one is a subtle record of how your piece was made.</p>
-    </section>
+    @if (Model.RelatedProducts.Count > 0)
+    {
+        <section class="related-products" aria-labelledby="related-products-title">
+            <div class="related-products-heading reveal">
+                <div>
+                    <span class="eyebrow"><i></i> Explore more</span>
+                    <h2 id="related-products-title">You might also <em>love.</em></h2>
+                </div>
+                <a class="text-link" href="/shop/">View all pieces <span>↗</span></a>
+            </div>
+            <div class="product-grid product-grid--related">
+                @foreach (var relatedProduct in Model.RelatedProducts)
+                {
+                    <partial name="_ProductCard" model="relatedProduct" />
+                }
+            </div>
+        </section>
+    }
 </main>

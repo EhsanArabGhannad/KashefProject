@@ -1,0 +1,14 @@
+.app-guide { width: min(1120px, calc(100% - 48px)); margin: 72px auto 96px; display: grid; grid-template-columns: 1fr 1fr; gap: 72px; }
+.app-intro > img { border-radius: 22px; margin-bottom: 28px; }
+.app-intro h1 { font-size: clamp(2.8rem, 5vw, 5rem); margin: 24px 0; }
+.app-intro > p { line-height: 1.8; color: #494842; }
+.app-intro [hidden] { display: none; }
+.app-intro .app-status { font-size: .9rem; margin: 18px 0 28px; }
+.app-instructions section { border-top: 1px solid var(--line); padding: 26px 0; }
+.app-instructions h2 { font-size: 1.5rem; letter-spacing: -.04em; margin: 16px 0; }
+.app-instructions ol { padding-left: 22px; line-height: 1.8; margin-bottom: 0; }
+.app-instructions li + li { margin-top: 12px; }
+.app-connection { background: #e8e5dc; border-radius: 16px; padding: 22px; line-height: 1.8; font-size: .9rem; }
+@media (max-width: 760px) {
+  .app-guide { grid-template-columns: minmax(0, 1fr); gap: 40px; margin: 40px auto 64px; }
+}

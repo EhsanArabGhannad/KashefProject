@@ -40,7 +40,9 @@ foreach ($pageDefinition in $pages) {
     $pageUrl = [Uri]::new([Uri]$PreviewUrl, $pageDefinition.Route).AbsoluteUri
     $page = Invoke-WebRequest -UseBasicParsing $pageUrl
     $prefix = if ($pageDefinition.Depth -eq 0) { "./" } else { "../" * $pageDefinition.Depth }
-    $staticHtml = $page.Content -replace '(href|src)="/', "`$1=`"$prefix"
+    # The static design preview has no accounts or checkout. App installation belongs to the MVC store.
+    $staticHtml = $page.Content -replace '(?s)<!-- pwa:start -->.*?<!-- pwa:end -->', ''
+    $staticHtml = $staticHtml -replace '(href|src)="/', "`$1=`"$prefix"
     $staticHtml = $staticHtml -replace '(?m)[ \t]+$', ''
     $outputPath = Join-Path $assetsRoot $pageDefinition.Output
     New-Item -ItemType Directory -Force (Split-Path -Parent $outputPath) | Out-Null

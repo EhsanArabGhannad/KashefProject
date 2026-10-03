@@ -105,17 +105,53 @@ public sealed class CheckoutController(
     [HttpGet("success")]
     public async Task<IActionResult> Success([FromQuery(Name = "session_id")] string sessionId)
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var hash = owner.GetHash();
-        if (hash is null || string.IsNullOrWhiteSpace(sessionId)) return NotFound();
+        if (userId is null || hash is null || string.IsNullOrWhiteSpace(sessionId)) return NotFound();
+        var savedOrder = await db.Orders.AsNoTracking().SingleOrDefaultAsync(item =>
+            item.StripeCheckoutSessionId == sessionId && item.CustomerUserId == userId && item.OwnerHash == hash);
+        if (savedOrder is null) return NotFound();
+        if (savedOrder.Status != OrderStatus.PendingPayment)
+            return RedirectToAction(nameof(Saved), new { reference = savedOrder.Reference });
         try
         {
             var order = await payments.ConfirmReturnAsync(sessionId, hash);
-            return order is null ? NotFound() : RedirectToAction(nameof(Saved), new { reference = order.Reference });
+            if (order is null)
+                TempData["PaymentError"] = "We could not check your payment status yet. If you completed payment, check its status before trying to pay again.";
         }
-        catch (Stripe.StripeException exception)
+        catch (Exception exception) when (exception is Stripe.StripeException or HttpRequestException)
         {
             logger.LogError(exception, "Stripe return verification failed for session {SessionId}.", sessionId);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable);
+            TempData["PaymentError"] = "We could not check your payment status yet. If you completed payment, check its status before trying to pay again.";
         }
+        return RedirectToAction(nameof(Saved), new { reference = savedOrder.Reference });
+    }
+
+    [HttpPost("status/{reference}"), ValidateAntiForgeryToken, EnableRateLimiting("checkout")]
+    public async Task<IActionResult> CheckStatus(string reference)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null) return Challenge();
+        var order = await db.Orders.AsNoTracking().SingleOrDefaultAsync(item =>
+            item.Reference == reference && item.CustomerUserId == userId);
+        if (order is null) return NotFound();
+        if (order.Status != OrderStatus.PendingPayment)
+            return RedirectToAction(nameof(Saved), new { reference });
+        if (!payments.IsConfigured || string.IsNullOrWhiteSpace(order.StripeCheckoutSessionId))
+        {
+            TempData["PaymentError"] = "Payment status checking is not available for this order yet. Your order remains saved in your account.";
+            return RedirectToAction(nameof(Saved), new { reference });
+        }
+        try
+        {
+            if (!await payments.SyncOrderAsync(order.Id))
+                TempData["PaymentNotice"] = "Stripe has not confirmed payment for this order yet. If you just completed payment, wait a moment and check again.";
+        }
+        catch (Exception exception) when (exception is Stripe.StripeException or HttpRequestException)
+        {
+            logger.LogError(exception, "Stripe status check failed for order {Reference}.", reference);
+            TempData["PaymentError"] = "We could not check your payment status yet. Please try checking again before making another payment.";
+        }
+        return RedirectToAction(nameof(Saved), new { reference });
     }
 }

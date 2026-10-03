@@ -4,27 +4,28 @@
     <a class="back-link" href="/cart/">← Back to your bag</a>
     <div class="commerce-heading"><span>@(paymentsEnabled ? "SECURE CHECKOUT" : "ONE STEP CLOSER")</span><h1>Your order<span>.</span></h1><p>@(paymentsEnabled ? "Enter your contact details, then continue to Stripe to confirm your U.S. delivery address and payment." : "Save your details. No payment is taken at this stage.")</p></div>
     <p class="commerce-notice">@(paymentsEnabled ? "Your card details are collected securely by Stripe and are never stored on this website. Standard U.S. shipping is included below; applicable tax is finalized on Stripe when tax collection is enabled." : "Online payment is not available yet. Saving an order does not confirm a purchase or start production.")</p>
-    <div class="commerce-grid">
-        <form method="post" action="/checkout/" class="commerce-form">
-            @Html.AntiForgeryToken()
-            <input asp-for="ReviewToken" type="hidden" />
-            <div asp-validation-summary="All"></div>
-            <h2 class="full">Contact details</h2>
-            <label class="full" asp-for="FullName">Full name<input asp-for="FullName" autocomplete="name" required /><span asp-validation-for="FullName"></span></label>
-            <label asp-for="Email">Account email<input asp-for="Email" autocomplete="email" type="email" readonly /><span asp-validation-for="Email"></span><small>Receipts and order updates will be sent to this verified address.</small></label>
-            <label asp-for="Phone">Phone (optional)<input asp-for="Phone" autocomplete="tel" type="tel" /><span asp-validation-for="Phone"></span></label>
-            <p class="full">Stripe will collect and validate the delivery address. Shipping is currently available within the United States only. Most pieces ship after 7–10 business days of production, followed by an estimated 5–7 business days in transit.</p>
-            <label class="full check-row"><input asp-for="AcknowledgePending" required /><span>I have reviewed my order and agree to the <a href="/terms/" target="_blank" rel="noopener">Terms of Service</a> and <a href="/shipping-returns/" target="_blank" rel="noopener">Shipping &amp; Returns Policy</a>.</span></label>
-            <button class="button button-dark full" type="submit">@(paymentsEnabled ? "Continue to secure payment" : "Save order — no payment") <span>→</span></button>
-        </form>
-        <aside class="commerce-summary">
+    <div class="commerce-grid commerce-grid--checkout">
+        <aside class="commerce-summary" aria-label="Order summary">
             <span class="commerce-eyebrow">YOUR PIECES · USD</span>
             @foreach (var line in Model.Summary.Lines) { <div class="commerce-mini-line"><span>@line.Name × @line.Quantity</span><strong>@StoreMoney.Format(line.LineTotalCents)</strong></div> }
             <div class="summary-total"><span>Item subtotal</span><strong>@StoreMoney.Format(Model.Summary.SubtotalCents)</strong></div>
             <div class="commerce-mini-line"><span>Standard U.S. shipping</span><strong>@(Model.ShippingCents == 0 ? "Free" : StoreMoney.Format(Model.ShippingCents))</strong></div>
             <div class="commerce-mini-line"><span>Tax</span><strong>@(Model.AutomaticTaxEnabled ? "Calculated by Stripe" : "Not collected")</strong></div>
             <div class="summary-total"><span>Total before tax</span><strong>@StoreMoney.Format(Model.TotalBeforeTaxCents)</strong></div>
-            <p>@(paymentsEnabled ? "No card information is collected on this website. Stripe handles the secure payment step." : "The subtotal is not the final charge. No card information is collected on this page.")</p>
+            <a class="back-link" href="/cart/">Edit your bag</a>
+            <p>@(paymentsEnabled ? "No card information is collected on this website. Stripe handles the secure payment step." : "No payment is taken when you save this order.")</p>
         </aside>
+        <form method="post" action="/checkout/" class="commerce-form" data-submit-once>
+            @Html.AntiForgeryToken()
+            <input asp-for="ReviewToken" type="hidden" />
+            <div asp-validation-summary="All" role="alert" tabindex="-1"></div>
+            <h2 class="full">Contact details</h2>
+            <label class="full" asp-for="FullName">Full name<input asp-for="FullName" autocomplete="name" required /><span asp-validation-for="FullName"></span></label>
+            <label asp-for="Email">Account email<input asp-for="Email" autocomplete="email" type="email" readonly /><span asp-validation-for="Email"></span><small>Receipts and order updates will be sent to this verified address.</small></label>
+            <label asp-for="Phone">Phone (optional)<input asp-for="Phone" autocomplete="tel" type="tel" /><span asp-validation-for="Phone"></span></label>
+            <p class="full">Stripe will collect and validate the delivery address. Shipping is currently available within the United States only. Most pieces ship after 7–10 business days of production, followed by an estimated 5–7 business days in transit.</p>
+            <label class="full check-row"><input asp-for="AcknowledgePending" required /><span>I have reviewed my order and agree to the <a href="/terms/" target="_blank" rel="noopener">Terms of Service</a> and <a href="/shipping-returns/" target="_blank" rel="noopener">Shipping &amp; Returns Policy</a>.</span></label>
+            <button class="button button-dark full" type="submit" data-pending-label="@(paymentsEnabled ? "Opening secure payment…" : "Saving your order…")">@(paymentsEnabled ? "Continue to secure payment" : "Save order — no payment") <span>→</span></button>
+        </form>
     </div>
 </main>
