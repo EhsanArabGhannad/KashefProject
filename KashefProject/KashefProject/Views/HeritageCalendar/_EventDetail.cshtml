@@ -1,9 +1,13 @@
 @model HeritageOccurrence
+@{
+    var fa = Model.Language == "fa";
+    string T(string en, string persian) => fa ? persian : en;
+}
 <article class="calendar-event-detail">
     <span class="event-category event-category--@Model.Event.Category">@Model.CategoryName</span>
     <h3>@Model.Event.Title</h3>
     <p>@Model.Event.Description</p>
-    <dl><dt>تاریخ شاهنشاهی این سال</dt><dd>@Model.ImperialDate @if (Model.Date != Model.EndDate) { <span>تا @HeritageCalendarText.Date(Model.EndDate)</span> }</dd><dt>معادل میلادی</dt><dd lang="en" dir="ltr">@Model.GregorianDate</dd><dt>مبنای تاریخ</dt><dd>@Model.DateBasis</dd></dl>
+    <dl><dt>@T("This year’s Imperial date", "تاریخ شاهنشاهی این سال")</dt><dd>@Model.ImperialDate @if (Model.Date != Model.EndDate) { <span>@T("to", "تا") @HeritageCalendarText.Date(Model.EndDate, Model.Language)</span> }</dd><dt>@T("Gregorian equivalent", "معادل میلادی")</dt><dd lang="en" dir="ltr">@Model.GregorianDate</dd><dt>@T("Date basis", "مبنای تاریخ")</dt><dd>@Model.DateBasis</dd></dl>
     @if (Model.Event.Note.Length > 0) { <p class="event-date-note">@Model.Event.Note</p> }
-    <a class="event-source" href="@Model.Event.SourceUrl" target="_blank" rel="noopener noreferrer">منبع: @Model.Event.SourceTitle <span aria-hidden="true">↗</span></a>
+    <a class="event-source" href="@Model.Event.SourceUrl" target="_blank" rel="noopener noreferrer">@T("Source:", "منبع:") @Model.Event.SourceTitle <span aria-hidden="true">↗</span></a>
 </article>

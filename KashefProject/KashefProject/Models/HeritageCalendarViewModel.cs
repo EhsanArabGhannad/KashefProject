@@ -9,11 +9,11 @@ public sealed record HeritageEvent(
     HeritageDateRule Rule, int Month, int Day, string SourceTitle, string SourceUrl,
     string Note = "", int Duration = 1, int? HistoricalYear = null);
 
-public sealed record HeritageOccurrence(HeritageEvent Event, DateOnly Date, DateOnly EndDate, string DateBasis)
+public sealed record HeritageOccurrence(HeritageEvent Event, DateOnly Date, DateOnly EndDate, string DateBasis, string Language = "fa")
 {
-    public string ImperialDate => HeritageCalendarText.Date(Date);
+    public string ImperialDate => HeritageCalendarText.Date(Date, Language);
     public string GregorianDate => Date.ToString("d MMMM yyyy", CultureInfo.InvariantCulture);
-    public string CategoryName => HeritageCalendarText.Category(Event.Category);
+    public string CategoryName => HeritageCalendarText.Category(Event.Category, Language);
 }
 
 public sealed record HeritageCalendarDay(int Number, DateOnly Date, bool IsToday, bool IsSelected,
@@ -27,6 +27,8 @@ public sealed class HeritageCalendarViewModel
     public string Category { get; init; } = "all";
     public string Query { get; init; } = "";
     public string Convention { get; init; } = "named";
+    public string Language { get; init; } = "en";
+    public bool IsPersian => Language == "fa";
     public DateOnly Today { get; init; }
     public DateOnly SelectedDate { get; init; }
     public int LeadingDays { get; init; }
@@ -36,7 +38,7 @@ public sealed class HeritageCalendarViewModel
     public IReadOnlyList<HeritageOccurrence> DayEvents { get; init; } = [];
     public IReadOnlyList<HeritageOccurrence> YearEvents { get; init; } = [];
     public IReadOnlyList<HeritageOccurrence> Upcoming { get; init; } = [];
-    public string MonthName => HeritageCalendarText.Months[Month - 1];
+    public string MonthName => HeritageCalendarText.MonthsFor(Language)[Month - 1];
     public int PreviousYear => Month == 1 ? Year - 1 : Year;
     public int PreviousMonth => Month == 1 ? 12 : Month - 1;
     public int NextYear => Month == 12 ? Year + 1 : Year;
@@ -51,18 +53,24 @@ public static class HeritageCalendarText
     public static int SolarHijriYear(int imperialYear) => checked(imperialYear - ImperialYearOffset);
     public static readonly string[] Months = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
     public static readonly string[] Weekdays = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه"];
-    public static string Number(int value) => string.Concat(value.ToString(CultureInfo.InvariantCulture).Select(c => c is >= '0' and <= '9' ? (char)('۰' + c - '0') : c));
-    public static string Date(DateOnly date)
+    private static readonly string[] EnglishMonths = ["Farvardin", "Ordibehesht", "Khordad", "Tir", "Mordad", "Shahrivar", "Mehr", "Aban", "Azar", "Dey", "Bahman", "Esfand"];
+    private static readonly string[] EnglishWeekdays = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+    public static string[] MonthsFor(string language) => language == "fa" ? Months : EnglishMonths;
+    public static string[] WeekdaysFor(string language) => language == "fa" ? Weekdays : EnglishWeekdays;
+    public static string Number(int value, string language = "fa") => language == "fa"
+        ? string.Concat(value.ToString(CultureInfo.InvariantCulture).Select(c => c is >= '0' and <= '9' ? (char)('۰' + c - '0') : c))
+        : value.ToString(CultureInfo.InvariantCulture);
+    public static string Date(DateOnly date, string language = "fa")
     {
         var calendar = new PersianCalendar();
         var value = date.ToDateTime(TimeOnly.MinValue);
-        return $"{Number(calendar.GetDayOfMonth(value))} {Months[calendar.GetMonth(value) - 1]} {Number(ImperialYear(calendar.GetYear(value)))}";
+        return $"{Number(calendar.GetDayOfMonth(value), language)} {MonthsFor(language)[calendar.GetMonth(value) - 1]} {Number(ImperialYear(calendar.GetYear(value)), language)}";
     }
-    public static string Category(string value) => value switch
+    public static string Category(string value, string language = "fa") => language == "fa" ? value switch
     {
         "ancient" => "جشن‌ها و آیین‌ها",
         "royal" => "شاهنشاهی",
         "memorial" => "یادبودهای معاصر",
         _ => "همه رویدادها"
-    };
+    } : value switch { "ancient" => "Festivals & traditions", "royal" => "Royal anniversaries", "memorial" => "Modern commemorations", _ => "All events" };
 }

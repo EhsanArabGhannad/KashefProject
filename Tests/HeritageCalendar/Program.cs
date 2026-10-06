@@ -34,7 +34,24 @@ Check(HeritageCalendarText.ImperialYear(1405) == 2585 && HeritageCalendarText.So
 var current = calendar.Build(null, null, null, null, null, null, new DateTimeOffset(2026, 10, 5, 12, 0, 0, TimeSpan.Zero));
 Check(current.Year == 2585 && current.Month == 7 && current.Day == 13, "Current imperial year without query");
 Check(HeritageCalendarText.Date(current.Today) == "۱۳ مهر ۲۵۸۵", "Imperial date formatter");
-Check(calendar.Build(2585, 8, 4, null, null, null).DayEvents.All(e => e.ImperialDate == "۴ آبان ۲۵۸۵"), "Event details use imperial year");
+Check(calendar.Build(2585, 8, 4, null, null, null, language: "fa").DayEvents.All(e => e.ImperialDate == "۴ آبان ۲۵۸۵"), "Persian event details use imperial year");
+Check(current.Language == "en" && current.MonthName == "Mehr", "English is the default language");
+Check(calendar.Build(2585, 8, 4, null, null, null).DayEvents.All(e => e.ImperialDate == "4 Aban 2585"), "English event details use imperial year");
+Check(calendar.Build(2585, 7, 16, null, null, null, language: "fa").MonthName == "مهر", "Persian month name");
+Check(calendar.Build(2585, 7, 16, null, null, null, language: "unknown").Language == "en", "Unknown language defaults to English");
+Check(calendar.Build(2585, 7, 16, null, "Mehrgan", null).YearEvents.Single().Event.Id == "mehrgan", "English event search");
+Check(calendar.Build(2585, 7, 16, null, "Mehrgan", null, language: "fa").YearEvents.Single().Event.Title == "مهرگان", "Search across languages");
+Check(HeritageCalendarText.Number(2585, "en") == "2585" && HeritageCalendarText.Number(2585, "fa") == "۲۵۸۵", "Localized numerals");
+foreach (var definition in HeritageCalendarCatalog.Events)
+{
+    var english = HeritageCalendarEnglish.Translate(definition);
+    Check(english.Title.Length > 0 && english.Description.Length > 0 && english.SourceTitle.Length > 0, "Complete English entry " + definition.Id);
+    Check(!System.Text.RegularExpressions.Regex.IsMatch(english.Title + english.Description + english.Note + english.SourceTitle, "[\\u0600-\\u06ff]"), "No untranslated English content " + definition.Id);
+    Check(english.SourceUrl == definition.SourceUrl && english.Rule == definition.Rule && english.Month == definition.Month && english.Day == definition.Day, "Translation preserves source and date rule " + definition.Id);
+}
+var englishYear = calendar.Build(2585, 7, 16, null, null, null);
+var persianYear = calendar.Build(2585, 7, 16, null, null, null, language: "fa");
+Check(englishYear.YearEvents.Select(e => (e.Event.Id, e.Date, e.EndDate)).SequenceEqual(persianYear.YearEvents.Select(e => (e.Event.Id, e.Date, e.EndDate))), "Language switch preserves every date");
 Check(calendar.Build(2579, 12, 30, null, null, null).Days.Count == 30, "Imperial leap year uses correct underlying year");
 Check(Month(1405, 7, now: new DateTimeOffset(2026, 10, 4, 21, 0, 0, TimeSpan.Zero)).Today == new DateOnly(2026, 10, 5), "Iran timezone midnight");
 var ongoing = HeritageCalendarService.SolarDate(1405, 2, 13);

@@ -9,5 +9,6 @@
     <Compile Include="../../KashefProject/KashefProject/Models/HeritageCalendarViewModel.cs" Link="Models.cs" />
     <Compile Include="../../KashefProject/KashefProject/Services/HeritageCalendarService.cs" Link="Service.cs" />
     <Compile Include="../../KashefProject/KashefProject/Data/HeritageCalendarCatalog.cs" Link="Catalog.cs" />
+    <Compile Include="../../KashefProject/KashefProject/Data/HeritageCalendarEnglish.cs" Link="English.cs" />
   </ItemGroup>
 </Project>

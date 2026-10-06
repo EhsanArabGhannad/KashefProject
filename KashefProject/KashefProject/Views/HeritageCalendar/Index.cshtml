@@ -1,103 +1,114 @@
 @model HeritageCalendarViewModel
 @using KashefProject.Services
 @{
-    ViewData["Title"] = "تقویم شاهنشاهی میراث ایران";
-    ViewData["Description"] = "تقویم شاهنشاهی جشن‌های باستانی، آیین‌های ایرانی و سالگردهای تاریخی؛ با روزشمار، توضیح تاریخ‌ها و منابع.";
-    ViewData["PageLanguage"] = "fa";
+    var fa = Model.IsPersian;
+    string T(string en, string persian) => fa ? persian : en;
+    string N(int value) => HeritageCalendarText.Number(value, Model.Language);
+    string D(DateOnly date) => HeritageCalendarText.Date(date, Model.Language);
+    ViewData["Title"] = T("Iranian Imperial Heritage Calendar", "تقویم شاهنشاهی میراث ایران");
+    ViewData["Description"] = T("Explore ancient Iranian festivals and royal anniversaries with an Imperial solar calendar, countdowns and documented sources.", "تقویم شاهنشاهی جشن‌های باستانی، آیین‌های ایرانی و سالگردهای تاریخی؛ با روزشمار، توضیح تاریخ‌ها و منابع.");
+    ViewData["PageLanguage"] = Model.Language;
     var next = Model.Upcoming.FirstOrDefault();
-    string Link(int year, int month, int? day = null, string? category = null, string fragment = "") =>
-        Url.Action("Index", "HeritageCalendar", new { year, month, day, category = category ?? Model.Category, q = Model.Query, convention = Model.Convention }) + fragment;
+    string Link(int year, int month, int? day = null, string? category = null, string? language = null) =>
+        Url.Action("Index", "HeritageCalendar", new { year, month, day, category = category ?? Model.Category, q = Model.Query, convention = Model.Convention, lang = language ?? Model.Language })!;
 }
 @section Styles {
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/calendar.css" asp-append-version="true" />
 }
-<main class="heritage-calendar" lang="fa" dir="rtl">
+<main class="heritage-calendar" lang="@Model.Language" dir="@(fa ? "rtl" : "ltr")" data-update-message="@T("Calendar updated.", "تقویم به‌روز شد.")" data-error-message="@T("The calendar could not be updated. Please try again.", "تقویم به‌روز نشد. لطفاً دوباره امتحان کنید.")">
+    <div class="calendar-language-bar">
+        <span>@T("Calendar language", "زبان تقویم")</span>
+        <nav class="calendar-languages" aria-label="@T("Choose calendar language", "انتخاب زبان تقویم")">
+            <a href="@Link(Model.Year, Model.Month, Model.Day, language: "en")" data-calendar-nav lang="en" dir="ltr" class="@(!fa ? "active" : "")" aria-current="@(!fa ? "true" : null)">English</a>
+            <a href="@Link(Model.Year, Model.Month, Model.Day, language: "fa")" data-calendar-nav lang="fa" dir="rtl" class="@(fa ? "active" : "")" aria-current="@(fa ? "true" : null)">فارسی</a>
+        </nav>
+    </div>
+    <p class="calendar-status" role="status" aria-live="polite" aria-atomic="true"></p>
     <section class="calendar-hero" aria-labelledby="calendar-title">
         <div class="calendar-intro">
-            <span class="calendar-kicker"><i aria-hidden="true"></i> تقویم شاهنشاهی میراث ایران <span lang="en" dir="ltr">THE IMPERIAL HERITAGE CALENDAR</span></span>
-            <h1 id="calendar-title">روزها می‌گذرند.<br /><em>میراث می‌ماند.</em></h1>
-            <p>از نوروز و مهرگان تا یادگارهای شاهنشاهی؛ هر روز، فرصتی برای بازخوانی یک روایت از ایران.</p>
-            <div class="calendar-today"><span>امروز به وقت ایران</span><strong>@HeritageCalendarText.Date(Model.Today) شاهنشاهی</strong></div>
+            <span class="calendar-kicker"><i aria-hidden="true"></i> @T("THE IMPERIAL HERITAGE CALENDAR", "تقویم شاهنشاهی میراث ایران")</span>
+            <h1 id="calendar-title">@T("Days move on.", "روزها می‌گذرند.")<br /><em>@T("Heritage lives on.", "میراث می‌ماند.")</em></h1>
+            <p>@T("From Nowruz and Mehrgan to royal anniversaries: every day is a chance to rediscover a story of Iran.", "از نوروز و مهرگان تا یادگارهای شاهنشاهی؛ هر روز، فرصتی برای بازخوانی یک روایت از ایران.")</p>
+            <div class="calendar-today"><span>@T("Today in Iran", "امروز به وقت ایران")</span><strong>@D(Model.Today) @T("Imperial", "شاهنشاهی")</strong></div>
         </div>
         <div class="calendar-countdown">
             <div class="calendar-orbit" aria-hidden="true"></div>
-            <span class="calendar-kicker">نزدیک‌ترین مناسبت @if (Model.Category != "all" || Model.Query.Length > 0) { <span>در نتایج انتخاب‌شده</span> }</span>
+            <span class="calendar-kicker">@T("NEXT OCCASION", "نزدیک‌ترین مناسبت") @if (Model.Category != "all" || Model.Query.Length > 0) { <span>@T("in your results", "در نتایج انتخاب‌شده")</span> }</span>
             @if (next is not null)
             {
                 var remaining = Math.Max(0, next.Date.DayNumber - Model.Today.DayNumber);
                 var pc = new System.Globalization.PersianCalendar();
                 var upcomingDate = (next.Date < Model.Today ? Model.Today : next.Date).ToDateTime(TimeOnly.MinValue);
-                <div class="countdown-number">@HeritageCalendarText.Number(remaining)<span>@(remaining == 0 ? "امروز" : "روز مانده")</span></div>
-                <a class="countdown-title" href="@Link(HeritageCalendarText.ImperialYear(pc.GetYear(upcomingDate)), pc.GetMonth(upcomingDate), pc.GetDayOfMonth(upcomingDate), fragment: "#day-events")">@next.Event.Title <span aria-hidden="true">↙</span></a>
+                <div class="countdown-number">@N(remaining)<span>@(remaining == 0 ? T("today", "امروز") : T(remaining == 1 ? "day to go" : "days to go", "روز مانده"))</span></div>
+                <a class="countdown-title" data-calendar-nav href="@Link(HeritageCalendarText.ImperialYear(pc.GetYear(upcomingDate)), pc.GetMonth(upcomingDate), pc.GetDayOfMonth(upcomingDate))">@next.Event.Title <span aria-hidden="true">↗</span></a>
                 <p>@next.ImperialDate · @next.CategoryName</p>
             }
             else
             {
-                <div class="countdown-empty">مناسبتی پیدا نشد.</div>
-                <p>فیلترها یا عبارت جست‌وجو را تغییر دهید.</p>
+                <div class="countdown-empty">@T("No occasions found.", "مناسبتی پیدا نشد.")</div>
+                <p>@T("Try a different filter or search term.", "فیلترها یا عبارت جست‌وجو را تغییر دهید.")</p>
             }
         </div>
     </section>
-
     <div class="calendar-toolbar" id="calendar">
-        <nav class="calendar-filters" aria-label="دسته‌بندی رویدادها">
+        <nav class="calendar-filters" aria-label="@T("Event categories", "دسته‌بندی رویدادها")">
             @foreach (var category in new[] { "all", "ancient", "royal", "memorial" })
             {
-                <a class="@(Model.Category == category ? "active" : "")" href="@Link(Model.Year, Model.Month, Model.Day, category, "#calendar")" aria-current="@(Model.Category == category ? "true" : null)">@HeritageCalendarText.Category(category)</a>
+                <a data-calendar-nav class="@(Model.Category == category ? "active" : "")" href="@Link(Model.Year, Model.Month, Model.Day, category)" aria-current="@(Model.Category == category ? "true" : null)">@HeritageCalendarText.Category(category, Model.Language)</a>
             }
         </nav>
-        <a class="calendar-today-link" href="@Url.Action("Index", new { category = Model.Category, q = Model.Query, convention = Model.Convention })#calendar">بازگشت به امروز ↙</a>
+        <a data-calendar-nav class="calendar-today-link" href="@Url.Action("Index", new { category = Model.Category, q = Model.Query, convention = Model.Convention, lang = Model.Language })">@T("Back to today", "بازگشت به امروز") ↗</a>
     </div>
-
-    <form class="calendar-controls" method="get" action="/calendar/#calendar" role="search" aria-label="انتخاب تاریخ و جست‌وجوی مناسبت‌ها">
+    <form class="calendar-controls" method="get" action="/calendar" role="search" aria-label="@T("Choose a date and search occasions", "انتخاب تاریخ و جست‌وجوی مناسبت‌ها")">
         <input type="hidden" name="category" value="@Model.Category" />
-        <label>ماه
-            <select name="month">@for (var month = 1; month <= 12; month++) { <option value="@month" selected="@(month == Model.Month)">@HeritageCalendarText.Months[month - 1]</option> }</select>
+        <input type="hidden" name="lang" value="@Model.Language" />
+        <label>@T("Month", "ماه")
+            <select name="month">@for (var month = 1; month <= 12; month++) { <option value="@month" selected="@(month == Model.Month)">@HeritageCalendarText.MonthsFor(Model.Language)[month - 1]</option> }</select>
         </label>
-        <label>سال شاهنشاهی
+        <label>@T("Imperial year", "سال شاهنشاهی")
             <input name="year" type="number" min="@HeritageCalendarService.MinYear" max="@HeritageCalendarService.MaxYear" value="@Model.Year" required inputmode="numeric" />
         </label>
-        <label class="calendar-convention">مبنای جشن‌های نام‌روز
+        <label class="calendar-convention">@T("Name-day festival dates", "مبنای جشن‌های نام‌روز")
             <select name="convention">
-                <option value="named" selected="@(Model.Convention == "named")">روز و ماه هم‌نام روی تقویم خورشیدی</option>
-                <option value="seasonal" selected="@(Model.Convention == "seasonal")">تطبیق ماه‌های ۳۰روزه از نوروز</option>
+                <option value="named" selected="@(Model.Convention == "named")">@T("Matching solar month/day labels", "روز و ماه هم‌نام روی تقویم خورشیدی")</option>
+                <option value="seasonal" selected="@(Model.Convention == "seasonal")">@T("30-day months from Nowruz", "تطبیق ماه‌های ۳۰روزه از نوروز")</option>
             </select>
         </label>
-        <label class="calendar-search">جست‌وجو در رویدادهای سال
-            <input name="q" type="search" maxlength="80" value="@Model.Query" placeholder="مثلاً نوروز، کوروش یا تاج‌گذاری" />
+        <label class="calendar-search">@T("Search this year’s occasions", "جست‌وجو در رویدادهای سال")
+            <input name="q" type="search" maxlength="80" value="@Model.Query" placeholder="@T("Try Nowruz, Cyrus or coronation", "مثلاً نوروز، کوروش یا تاج‌گذاری")" />
         </label>
-        <button type="submit">نمایش <span aria-hidden="true">↙</span></button>
+        <button type="submit">@T("Show", "نمایش") <span aria-hidden="true">↗</span></button>
     </form>
-
-    <section class="calendar-workspace" aria-label="تقویم ماه و جزئیات روز">
+    <section class="calendar-workspace" aria-label="@T("Monthly calendar and day details", "تقویم ماه و جزئیات روز")">
         <div class="calendar-month-panel">
             <div class="calendar-month-heading">
-                <div><span class="calendar-kicker">روزهای یک روایت</span><h2>@Model.MonthName <span>@HeritageCalendarText.Number(Model.Year)</span></h2></div>
-                <nav class="calendar-month-nav" aria-label="جابه‌جایی بین ماه‌ها">
-                    @if (Model.PreviousYear >= HeritageCalendarService.MinYear) { <a href="@Link(Model.PreviousYear, Model.PreviousMonth, fragment: "#calendar")" aria-label="ماه قبل">→</a> }
-                    @if (Model.NextYear <= HeritageCalendarService.MaxYear) { <a href="@Link(Model.NextYear, Model.NextMonth, fragment: "#calendar")" aria-label="ماه بعد">←</a> }
+                <div><span class="calendar-kicker">@T("DAYS WITH A STORY", "روزهای یک روایت")</span><h2>@Model.MonthName <span>@N(Model.Year)</span></h2></div>
+                <nav class="calendar-month-nav" aria-label="@T("Browse months", "جابه‌جایی بین ماه‌ها")">
+                    @if (Model.PreviousYear >= HeritageCalendarService.MinYear) { <a data-calendar-nav data-calendar-direction="previous" href="@Link(Model.PreviousYear, Model.PreviousMonth)" aria-label="@T("Previous month", "ماه قبل")">@T("←", "→")</a> }
+                    @if (Model.NextYear <= HeritageCalendarService.MaxYear) { <a data-calendar-nav data-calendar-direction="next" href="@Link(Model.NextYear, Model.NextMonth)" aria-label="@T("Next month", "ماه بعد")">@T("→", "←")</a> }
                 </nav>
             </div>
-            <div class="calendar-weekdays" aria-hidden="true">@foreach (var weekday in HeritageCalendarText.Weekdays) { <span>@weekday</span> }</div>
-            <div class="calendar-days" aria-label="روزهای @Model.MonthName">
+            <div class="calendar-weekdays" aria-hidden="true">@foreach (var weekday in HeritageCalendarText.WeekdaysFor(Model.Language)) { <span>@weekday</span> }</div>
+            <div class="calendar-days" aria-label="@T("Days of", "روزهای") @Model.MonthName">
                 @for (var blank = 0; blank < Model.LeadingDays; blank++) { <span class="calendar-blank" aria-hidden="true"></span> }
                 @foreach (var day in Model.Days)
                 {
-                    <a href="@Link(Model.Year, Model.Month, day.Number, fragment: "#day-events")" class="calendar-day @(day.IsToday ? "is-today" : "") @(day.IsSelected ? "is-selected" : "") @(day.Date.DayOfWeek == DayOfWeek.Friday ? "is-friday" : "")" aria-current="@(day.IsSelected ? "date" : null)" aria-label="@(HeritageCalendarText.Date(day.Date) + (day.IsToday ? "، امروز" : "") + (day.Events.Count > 0 ? "، " + string.Join("، ", day.Events.Select(e => e.Event.Title)) : "، بدون رویداد ثبت‌شده"))" data-calendar-day="@day.Number">
-                        <span class="day-number">@HeritageCalendarText.Number(day.Number)</span>
-                        @if (day.IsToday) { <small class="day-today">امروز</small> }
+                    var label = D(day.Date) + (day.IsToday ? T(", today", "، امروز") : "") + (day.Events.Count > 0 ? ", " + string.Join(", ", day.Events.Select(e => e.Event.Title)) : T(", no listed events", "، بدون رویداد ثبت‌شده"));
+                    <a data-calendar-nav href="@Link(Model.Year, Model.Month, day.Number)" class="calendar-day @(day.IsToday ? "is-today" : "") @(day.IsSelected ? "is-selected" : "") @(day.Date.DayOfWeek == DayOfWeek.Friday ? "is-friday" : "")" aria-current="@(day.IsSelected ? "date" : null)" aria-label="@label" data-calendar-day="@day.Number">
+                        <span class="day-number">@N(day.Number)</span>
+                        @if (day.IsToday) { <small class="day-today">@T("today", "امروز")</small> }
                         <span class="day-event-dots" aria-hidden="true">@foreach (var category in day.Events.Select(e => e.Event.Category).Distinct()) { <i class="event-dot event-dot--@category"></i> }</span>
                         @if (day.Events.Count > 0) { <span class="day-caption">@day.Events[0].Event.Title</span> }
-                        @if (day.Events.Count > 1) { <small class="day-more">+@HeritageCalendarText.Number(day.Events.Count - 1)</small> }
+                        @if (day.Events.Count > 1) { <small class="day-more">+@N(day.Events.Count - 1)</small> }
                     </a>
                 }
             </div>
-            <div class="calendar-legend"><span><i class="event-dot event-dot--ancient"></i> آیین‌ها</span><span><i class="event-dot event-dot--royal"></i> شاهنشاهی</span><span><i class="event-dot event-dot--memorial"></i> یادبود</span><span class="legend-today">حلقه: امروز</span></div>
+            <div class="calendar-legend"><span><i class="event-dot event-dot--ancient"></i> @T("Traditions", "آیین‌ها")</span><span><i class="event-dot event-dot--royal"></i> @T("Royal", "شاهنشاهی")</span><span><i class="event-dot event-dot--memorial"></i> @T("Commemorations", "یادبود")</span><span class="legend-today">@T("Outline: today", "حلقه: امروز")</span></div>
         </div>
-        <aside class="calendar-day-panel" id="day-events" aria-labelledby="selected-day-title" tabindex="-1">
-            <span class="calendar-kicker">روایت این روز</span>
-            <h2 id="selected-day-title">@HeritageCalendarText.Date(Model.SelectedDate)</h2>
+        <aside class="calendar-day-panel" id="day-events" aria-labelledby="selected-day-title">
+            <span class="calendar-kicker">@T("THIS DAY’S STORY", "روایت این روز")</span>
+            <h2 id="selected-day-title">@D(Model.SelectedDate)</h2>
             <time class="calendar-gregorian" datetime="@Model.SelectedDate.ToString("yyyy-MM-dd")" dir="ltr" lang="en">@Model.SelectedDate.ToString("dddd, d MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture)</time>
             @if (Model.DayEvents.Count > 0)
             {
@@ -105,45 +116,50 @@
             }
             else
             {
-                <div class="calendar-empty"><span aria-hidden="true">✳</span><h3>امروز، جای یک روایت تازه است.</h3><p>برای این روز با فیلتر فعلی رویدادی ثبت نشده. یک روز نشانه‌دار را انتخاب کنید یا رویدادهای ماه را ببینید.</p><a href="#month-events">دیدن رویدادهای ماه ↓</a></div>
+                <div class="calendar-empty"><span aria-hidden="true">✳</span><h3>@T("Room for a new story.", "امروز، جای یک روایت تازه است.")</h3><p>@T("No events are listed for this day with your current filters. Choose a marked day, or explore the month’s occasions below.", "برای این روز با فیلتر فعلی رویدادی ثبت نشده. یک روز نشانه‌دار را انتخاب کنید یا رویدادهای ماه را در پایین ببینید.")</p></div>
             }
         </aside>
     </section>
-
     <section class="calendar-agenda" id="month-events" aria-labelledby="agenda-title">
-        <div class="calendar-section-heading"><div><span class="calendar-kicker">در یک نگاه</span><h2 id="agenda-title">رویدادهای @Model.MonthName</h2></div><span class="calendar-result-count">@HeritageCalendarText.Number(Model.MonthEvents.Count) رویداد</span></div>
-        @if (Model.MonthEvents.Count == 0) { <p class="calendar-no-results">در این ماه رویدادی با انتخاب فعلی پیدا نشد. ماه دیگری را انتخاب کنید یا فیلترها را تغییر دهید.</p> }
+        <div class="calendar-section-heading"><div><span class="calendar-kicker">@T("AT A GLANCE", "در یک نگاه")</span><h2 id="agenda-title">@T("Occasions in", "رویدادهای") @Model.MonthName</h2></div><span class="calendar-result-count">@N(Model.MonthEvents.Count) @T("events", "رویداد")</span></div>
+        @if (Model.MonthEvents.Count == 0) { <p class="calendar-no-results">@T("No occasions match your selection this month. Try another month or change your filters.", "در این ماه رویدادی با انتخاب فعلی پیدا نشد. ماه دیگری را انتخاب کنید یا فیلترها را تغییر دهید.")</p> }
         <div class="calendar-agenda-grid">
             @foreach (var occurrence in Model.MonthEvents)
             {
                 <details class="calendar-agenda-card calendar-agenda-card--@occurrence.Event.Category">
-                    <summary><span class="event-category">@occurrence.CategoryName</span><strong>@occurrence.Event.Title</strong><span class="agenda-date">@occurrence.ImperialDate @if (occurrence.EndDate != occurrence.Date) { <span>تا @HeritageCalendarText.Date(occurrence.EndDate)</span> }</span><span class="agenda-expand">جزئیات و منبع <b aria-hidden="true">+</b></span></summary>
+                    <summary><span class="event-category">@occurrence.CategoryName</span><strong>@occurrence.Event.Title</strong><span class="agenda-date">@occurrence.ImperialDate @if (occurrence.EndDate != occurrence.Date) { <span>@T("to", "تا") @D(occurrence.EndDate)</span> }</span><span class="agenda-expand">@T("Details & source", "جزئیات و منبع") <b aria-hidden="true">+</b></span></summary>
                     <partial name="_EventDetail" model="occurrence" />
                 </details>
             }
         </div>
     </section>
-
     @if (Model.Query.Length > 0)
     {
         <section class="calendar-year-results" aria-labelledby="year-search-title">
-            <h2 id="year-search-title">نتایج «@Model.Query» در سال @HeritageCalendarText.Number(Model.Year)</h2>
-            <p>@HeritageCalendarText.Number(Model.YearEvents.Count) رویداد با فیلتر فعلی در کل سال پیدا شد.</p>
+            <h2 id="year-search-title">@T("Results for", "نتایج") «@Model.Query» · @N(Model.Year)</h2>
+            <p>@N(Model.YearEvents.Count) @T("occasions match your filters across the year.", "رویداد با فیلتر فعلی در کل سال پیدا شد.")</p>
             @foreach (var occurrence in Model.YearEvents)
             {
                 var pc = new System.Globalization.PersianCalendar();
                 var date = occurrence.Date.ToDateTime(TimeOnly.MinValue);
-                <a href="@Link(Model.Year, pc.GetMonth(date), pc.GetDayOfMonth(date), fragment: "#day-events")"><span>@occurrence.Event.Title</span><time>@occurrence.ImperialDate</time><b aria-hidden="true">↙</b></a>
+                <a data-calendar-nav href="@Link(Model.Year, pc.GetMonth(date), pc.GetDayOfMonth(date))"><span>@occurrence.Event.Title</span><time>@occurrence.ImperialDate</time><b aria-hidden="true">↗</b></a>
             }
         </section>
     }
-
     <section class="calendar-editorial" aria-labelledby="calendar-editorial-title">
-        <div><span class="calendar-kicker">دقت، بخشی از احترام به میراث است.</span><h2 id="calendar-editorial-title">یک تقویم.<br /><em>چند سنتِ زمان.</em></h2></div>
+        <div><span class="calendar-kicker">@T("ACCURACY IS PART OF HONORING HERITAGE.", "دقت، بخشی از احترام به میراث است.")</span><h2 id="calendar-editorial-title">@T("One calendar.", "یک تقویم.")<br /><em>@T("Many traditions of time.", "چند سنتِ زمان.")</em></h2></div>
         <div>
-            <p>این مجموعه با @HeritageCalendarText.Number(Model.TotalEvents) مناسبت مستند آغاز شده و قابل گسترش است؛ فهرستِ جامع همه رخدادهای تاریخ ایران نیست. برای وقایع باستانیِ فاقد روز و ماه قابل اتکا، تاریخ دلخواه تعیین نکرده‌ایم.</p>
-            <details><summary>مبنای تاریخ‌ها و تفاوت تقویم‌ها</summary><p>تقویم صفحه، خورشیدی با مبدأ شاهنشاهی و آغاز هفته شنبه است. سال شاهنشاهی برابر با سال هجری خورشیدی به‌اضافه ۱۱۸۰ است؛ ماه‌ها، روزها و قواعد کبیسه تغییر نمی‌کنند. «امروز» و تعداد روزهای باقی‌مانده به وقت ایران محاسبه می‌شود.</p><p>برای جشن‌های نام‌روز، حالت پیش‌فرض شماره روز و نام ماه سنتی را روی ماه خورشیدی نمایش می‌دهد؛ این یک شیوه نمایش است، نه تبدیل تقویم مذهبی. حالت «تطبیق ماه‌های ۳۰روزه» فاصله روزها از نوروز را حفظ می‌کند. گاه‌شماری مذهبی «شاهنشاهی» زرتشتی با مبدأ شاهنشاهی این صفحه متفاوت است؛ این صفحه مرجع تقویم مذهبی یک جامعه خاص نیست.</p><p>سالگردهای میلادی از تاریخ منبع به تاریخ شاهنشاهی تبدیل می‌شوند؛ به همین دلیل ممکن است در سال‌های مختلف یک روز جابه‌جا شوند. هر رویداد، مبنا و منبع خودش را دارد. یادبود معاصر یا تاریخ آیینی به معنی تاریخ اثبات‌شده یک رخداد باستانی نیست.</p><a href="https://www.iranicaonline.org/articles/calendars/calendars-ii-in-the-islamic-period/" target="_blank" rel="noopener noreferrer">درباره مبدأ شاهنشاهی؛ ایرانیکا ↗</a><br /><a href="https://avesta.org/zcal.html" target="_blank" rel="noopener noreferrer">مطالعه درباره تقویم‌های زرتشتی ↗</a></details>
-            <a class="calendar-shop-link" href="/shop/">میراث ایران، در خانه شما <span aria-hidden="true">↙</span></a>
+            <p>@T($"This growing collection starts with {N(Model.TotalEvents)} documented occasions; it is not an exhaustive timeline of Iranian history. We do not assign arbitrary dates to ancient events without a reliable day and month.", $"این مجموعه با {N(Model.TotalEvents)} مناسبت مستند آغاز شده و قابل گسترش است؛ فهرستِ جامع همه رخدادهای تاریخ ایران نیست. برای وقایع باستانیِ فاقد روز و ماه قابل اتکا، تاریخ دلخواه تعیین نکرده‌ایم.")</p>
+            <details><summary>@T("Date conventions & calendar differences", "مبنای تاریخ‌ها و تفاوت تقویم‌ها")</summary>
+                <p>@T("This solar calendar uses the Imperial era and a Saturday-first week. Imperial years equal Solar Hijri years plus 1180; months, days and leap-year rules stay unchanged. Today and countdowns are calculated in Iran’s time zone.", "تقویم صفحه، خورشیدی با مبدأ شاهنشاهی و آغاز هفته شنبه است. سال شاهنشاهی برابر با سال هجری خورشیدی به‌اضافه ۱۱۸۰ است؛ ماه‌ها، روزها و قواعد کبیسه تغییر نمی‌کنند. «امروز» و تعداد روزهای باقی‌مانده به وقت ایران محاسبه می‌شود.")</p>
+                <p>@T("By default, traditional name-day festivals use matching month/day labels on solar months. This is a display convention, not a religious-calendar conversion. The 30-day option preserves their distance from Nowruz. The Zoroastrian religious Shahanshahi calendar is distinct from the Imperial era used here; this page is not a community-specific religious calendar.", "برای جشن‌های نام‌روز، حالت پیش‌فرض شماره روز و نام ماه سنتی را روی ماه خورشیدی نمایش می‌دهد؛ این یک شیوه نمایش است، نه تبدیل تقویم مذهبی. حالت «تطبیق ماه‌های ۳۰روزه» فاصله روزها از نوروز را حفظ می‌کند. گاه‌شماری مذهبی «شاهنشاهی» زرتشتی با مبدأ شاهنشاهی این صفحه متفاوت است؛ این صفحه مرجع تقویم مذهبی یک جامعه خاص نیست.")</p>
+                <p>@T("Gregorian anniversaries are converted from the source date each year, so their Imperial equivalent may shift by a day. Each occasion includes its own date basis and source. A modern commemoration or ritual date does not establish the exact date of an ancient historical event.", "سالگردهای میلادی از تاریخ منبع به تاریخ شاهنشاهی تبدیل می‌شوند؛ به همین دلیل ممکن است در سال‌های مختلف یک روز جابه‌جا شوند. هر رویداد، مبنا و منبع خودش را دارد. یادبود معاصر یا تاریخ آیینی به معنی تاریخ اثبات‌شده یک رخداد باستانی نیست.")</p>
+                <a href="https://www.iranicaonline.org/articles/calendars/calendars-ii-in-the-islamic-period/" target="_blank" rel="noopener noreferrer">@T("About the Imperial era — Encyclopaedia Iranica", "درباره مبدأ شاهنشاهی؛ ایرانیکا") ↗</a><br /><a href="https://avesta.org/zcal.html" target="_blank" rel="noopener noreferrer">@T("Explore Zoroastrian calendars", "مطالعه درباره تقویم‌های زرتشتی") ↗</a>
+            </details>
+            <a class="calendar-shop-link" href="/shop/">@T("Iranian heritage, in your home", "میراث ایران، در خانه شما") <span aria-hidden="true">↗</span></a>
         </div>
     </section>
 </main>
+@section Scripts {
+    <script src="~/js/calendar.js" asp-append-version="true" defer></script>
+}

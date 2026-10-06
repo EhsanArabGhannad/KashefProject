@@ -12,7 +12,13 @@ function Fetch($path) {
     if ($response.StatusCode -ne 200) { throw "FAIL: $path unavailable" }
     return [System.Net.WebUtility]::HtmlDecode($response.Content)
 }
-$page = Fetch '/calendar/?year=2585&month=8&day=4'
+$english = Fetch '/calendar/?year=2585&month=7&day=16'
+Assert ($english.Contains('<main class="heritage-calendar" lang="en" dir="ltr"')) 'English is the default calendar language'
+Assert ($english.Contains('Days move on.') -and $english.Contains('Mehrgan') -and $english.Contains('16 Mehr 2585')) 'English headings and event dates'
+Assert ($english.Contains('Calendar language') -and $english.Contains('>English</a>') -and $english.Contains('>فارسی</a>')) 'Prominent bilingual switch'
+Assert ($english.Contains('name="lang" value="en"') -and $english.Contains('lang=fa')) 'Language preserved in form and switch links'
+Assert (!$english.Contains('#calendar') -and !$english.Contains('#day-events') -and $english.Contains('/js/calendar.js')) 'Fragment-free enhanced calendar navigation'
+$page = Fetch '/calendar/?year=2585&month=8&day=4&lang=fa'
 Assert ($page.Contains('lang="fa"') -and $page.Contains('dir="rtl"')) 'Persian page and RTL main'
 Assert (([regex]::Matches($page, 'data-calendar-day=').Count) -eq 30) 'Thirty-day Aban grid'
 Assert ($page.Contains('زادروز محمدرضاشاه پهلوی') -and $page.Contains('تاج‌گذاری شاه و شهبانو')) 'Both events on fourth Aban'
@@ -20,16 +26,18 @@ Assert ($page.Contains('target="_blank" rel="noopener noreferrer"')) 'Safe sourc
 Assert ($page.Contains('href="/calendar') -and $page.Contains('name="convention"')) 'Calendar navigation and date-convention selector'
 Assert ($page.Contains('سال شاهنشاهی') -and $page.Contains('value="2585"') -and $page.Contains('۴ آبان ۲۵۸۵')) 'Imperial year in selector and event dates'
 Assert (!$page.Contains('year=1405') -and $page.Contains('year=2585')) 'All generated navigation uses imperial years'
-$legacy = Fetch '/calendar/?year=1405&month=8&day=4'
-Assert ($legacy.Contains('value="2585"')) 'Legacy preview links redirect to imperial years'
+$legacy = Fetch '/calendar/?year=1405&month=8&day=4&lang=fa'
+Assert ($legacy.Contains('value="2585"') -and $legacy.Contains('name="lang" value="fa"')) 'Legacy preview links preserve language and redirect to imperial years'
 $boundary = Fetch '/calendar/?year=2585&month=12'
 Assert ($boundary.Contains('year=2586&month=1')) 'Next imperial year navigation'
 $leap = Fetch '/calendar/?year=2579&month=12'
 Assert (([regex]::Matches($leap, 'data-calendar-day=').Count) -eq 30) 'Leap year rendered'
 $common = Fetch '/calendar/?year=2580&month=12'
 Assert (([regex]::Matches($common, 'data-calendar-day=').Count) -eq 29) 'Common year rendered'
-$search = Fetch ('/calendar/?year=2585&month=1&q=' + [uri]::EscapeDataString('كوروش'))
-Assert ($search.Contains('روز کوروش بزرگ') -and $search.Contains('نتایج «كوروش»')) 'Normalized whole-year search'
+$search = Fetch ('/calendar/?year=2585&month=1&lang=fa&q=' + [uri]::EscapeDataString('كوروش'))
+Assert ($search.Contains('روز کوروش بزرگ') -and $search.Contains('«كوروش»')) 'Normalized whole-year Persian search'
+$englishSearch = Fetch '/calendar/?year=2585&month=1&q=Mehrgan'
+Assert ($englishSearch.Contains('Results for') -and $englishSearch.Contains('16 Mehr 2585')) 'Whole-year English search'
 # Inspect raw HTML: Razor must encode even when user query is echoed in results.
 $raw = (Invoke-WebRequest ([uri]::new($origin, '/calendar/?q=%3Cscript%3Ealert(1)%3C%2Fscript%3E')) -UseBasicParsing).Content
 Assert (!$raw.Contains('<script>alert(1)</script>')) 'User search is HTML-encoded'

@@ -1,16 +1,17 @@
 # Iranian heritage calendar
 
-Public route: `/calendar/`. Persian content with an RTL main region; shared store navigation remains English/LTR. The cream, orange, lime, bold-heading and rounded-panel treatment follows the existing storefront.
+Public route: `/calendar/`. English by default (`lang=en`), with a prominent English / فارسی switch above the hero. `lang=fa` renders a Persian RTL main region; shared store navigation remains English/LTR. The cream, orange, lime, bold-heading and rounded-panel treatment follows the existing storefront.
 
 ## Features
 
-- Solar month grid with **imperial (Shahanshahi) year numbering**, Saturday-first week, Persian numerals, Iran-local today.
+- Solar month grid with **imperial (Shahanshahi) year numbering**, Saturday-first week, localized numerals/month labels, Iran-local today.
 - Year/month selector (2480–2680 imperial), previous/next month, today shortcut and selected-day details.
 - Countdown to the next matching event; ongoing multi-day festivals count as today.
 - Ancient festivals, royal anniversaries and modern commemorations as separate filters.
-- Whole-year search, including Arabic/Persian kaf and ya normalization.
+- Whole-year search across both English and Persian descriptions, including Arabic/Persian kaf and ya normalization.
 - Source, historical caveat and recurrence basis on every event. Native expandable month agenda.
-- Server-rendered GET navigation: no JavaScript needed for any calendar control.
+- Day, month, category, search, today and language controls update the calendar without a page reload or anchor jump, preserving scroll position and keyboard focus. Back/Forward restores the calendar state and stored scroll position.
+- Server-rendered GET fallback: controls remain usable without JavaScript (native page navigation). Language is retained in every generated calendar link and form. Dates, filters and search terms survive language changes.
 
 ## Editorial scope and dates
 
@@ -24,7 +25,7 @@ Gregorian-based anniversaries are converted afresh each year; historically attes
 
 ## Maintaining content
 
-Entries live in `Data/HeritageCalendarCatalog.cs`; each needs a stable unique ID, category, concise original description, explicit date rule, HTTPS source and, when relevant, uncertainty note and original Gregorian historical year. `Duration` supports multi-day festivals. Editing the catalogue requires a new build/release; calendar editing is not currently part of the admin panel. No database migration or customer-data change is needed.
+Entries live in `Data/HeritageCalendarCatalog.cs`; each needs a stable unique ID, category, concise original description, explicit date rule, HTTPS source and, when relevant, uncertainty note and original Gregorian historical year. Every ID also needs a matching English entry in `Data/HeritageCalendarEnglish.cs`, translating its description and caveats without changing sources or recurrence rules. `Duration` supports multi-day festivals. Editing the catalogue requires a new build/release; calendar editing is not currently part of the admin panel. No database migration or customer-data change is needed.
 
 Sources include Encyclopaedia Iranica, UNESCO's Yalda entry, Avesta's calendar reference and Modi's primary account, the Farah Pahlavi foundation/site, and the Tel Aviv University Iranian studies center. Links are visible alongside the events.
 
@@ -36,4 +37,4 @@ dotnet run --project Tests/HeritageCalendar/HeritageCalendar.Tests.csproj
 pwsh -File Tests/calendar-http-smoke.ps1 -BaseUrl http://127.0.0.1:5190
 ```
 
-The standalone test runner links the three calendar source files and needs no third-party test framework. It checks leap/common months, both date conventions, overlaps, historical lower bounds, normalization, filtering, year navigation, invalid dates, Iran timezone, and recurrence boundaries throughout 1300–1500. HTTP checks are read-only and cover rendered dates, encoding, stylesheet availability, navigation and invalid query responses. Run against an isolated local database; do not reseed the production store for calendar tests.
+The standalone test runner links the four calendar source files and needs no third-party test framework. It checks translation completeness, cross-language search, identical dates in both languages, leap/common months, both date conventions, overlaps, historical lower bounds, normalization, filtering, year navigation, invalid dates, Iran timezone, and recurrence boundaries throughout 1300–1500. HTTP checks are read-only and cover bilingual rendered dates, language propagation, fragment-free links, encoding, stylesheet availability, navigation and invalid query responses. Browser checks must verify actual scroll preservation across day/month/filter/form/language changes and Back/Forward. Run against an isolated local database; do not reseed the production store for calendar tests.
