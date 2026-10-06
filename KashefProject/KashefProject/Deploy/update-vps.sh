@@ -45,6 +45,16 @@ for attempt in {1..30}; do
   sleep 1
 done
 test "$healthy" == true
+# Validate the app through the HTTPS proxy as well as the local backend.
+# Keep rollback armed until the installable app and offline shell are reachable.
+for path in /app/ /manifest.webmanifest /service-worker.js /offline.html /css/offline.css /js/offline.js /icons/icon-192.png /icons/icon-512.png /icons/icon-maskable-512.png /icons/apple-touch-icon.png; do
+  curl --fail --silent --show-error --max-time 20 --resolve craftisma.net:443:127.0.0.1 "https://craftisma.net${path}" >/dev/null
+done
+worker_headers="$(curl --fail --silent --show-error --max-time 20 --head --resolve craftisma.net:443:127.0.0.1 https://craftisma.net/service-worker.js)"
+manifest_headers="$(curl --fail --silent --show-error --max-time 20 --head --resolve craftisma.net:443:127.0.0.1 https://craftisma.net/manifest.webmanifest)"
+grep -Eiq '^cache-control:.*no-cache' <<< "$worker_headers"
+grep -Eiq '^cache-control:.*no-cache' <<< "$manifest_headers"
+grep -Eiq '^content-type: application/manifest\+json' <<< "$manifest_headers"
 trap - ERR
-echo "Store and admin are healthy. Previous release retained. Backup: $backup_dir"
+echo "Store, admin and HTTPS PWA assets are healthy. Previous release retained. Backup: $backup_dir"
 systemctl is-active craftisma nginx

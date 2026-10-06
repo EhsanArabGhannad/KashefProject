@@ -1,0 +1,9 @@
+@model HeritageOccurrence
+<article class="calendar-event-detail">
+    <span class="event-category event-category--@Model.Event.Category">@Model.CategoryName</span>
+    <h3>@Model.Event.Title</h3>
+    <p>@Model.Event.Description</p>
+    <dl><dt>تاریخ شاهنشاهی این سال</dt><dd>@Model.ImperialDate @if (Model.Date != Model.EndDate) { <span>تا @HeritageCalendarText.Date(Model.EndDate)</span> }</dd><dt>معادل میلادی</dt><dd lang="en" dir="ltr">@Model.GregorianDate</dd><dt>مبنای تاریخ</dt><dd>@Model.DateBasis</dd></dl>
+    @if (Model.Event.Note.Length > 0) { <p class="event-date-note">@Model.Event.Note</p> }
+    <a class="event-source" href="@Model.Event.SourceUrl" target="_blank" rel="noopener noreferrer">منبع: @Model.Event.SourceTitle <span aria-hidden="true">↗</span></a>
+</article>

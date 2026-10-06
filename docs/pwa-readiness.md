@@ -1,6 +1,6 @@
 # Craftisma PWA — phase 2
 
-Implemented and checked locally on October 4, 2026. Production deployment and physical-device installation acceptance remain outstanding.
+Implemented and checked locally on October 4, 2026, then deployed to the HTTPS store that day. Physical-device installation and complete payment acceptance remain outstanding. See [the publication record](pwa-launch.md).
 
 ## Implemented
 
@@ -32,11 +32,11 @@ Updates do not call `skipWaiting`, reload tabs, or interrupt an active purchase.
 
 Evidence is in the ignored `artifacts/pwa-review/` directory: `pwa-test-results.txt`, `commerce-smoke-results.txt`, `layout-results.json`, `install-mobile.png`, and `offline-mobile.png`. Browser disconnection was simulated by stopping the local server, not by a physical phone losing its network.
 
-The static design export removes PWA links and registration script blocks. App installation targets the server-backed MVC store; the GitHub Pages design preview has no functioning accounts or checkout. No production files or deployment were changed by the verification run.
+The static design export removes PWA links and registration script blocks. App installation targets the server-backed MVC store; the GitHub Pages design preview has no functioning accounts or checkout. The local verification run used isolated data; subsequent production publication is recorded separately in [pwa-launch.md](pwa-launch.md).
 
 ## Production acceptance
 
-1. Deploy the full MVC store at the root of an HTTPS origin. The manifest URLs and service-worker scope assume root hosting. Confirm `/manifest.webmanifest`, `/service-worker.js`, `/offline.html`, their assets and revalidation headers through the actual reverse proxy.
+1. **Completed:** deployed the full MVC store at the root of `https://craftisma.net` and confirmed PWA assets and revalidation headers through the real reverse proxy. The manifest URLs and service-worker scope assume root hosting.
 2. On a physical Android phone, install from Chrome; confirm the icon, standalone launch, shop landing page, account sign-in, bag persistence, external links and back navigation. Installation prompt availability depends on browser eligibility and user settings.
 3. On a physical iPhone, add from Safari with Open as Web App enabled when shown. Confirm the home-screen icon, standalone launch, account/session behavior, keyboard and navigation. Do not assume the browser and installed app share an existing login session.
 4. On both devices, load online, disconnect, navigate and reopen the app, then reconnect and retry. Confirm that no cached customer/order or product-price screen is shown.

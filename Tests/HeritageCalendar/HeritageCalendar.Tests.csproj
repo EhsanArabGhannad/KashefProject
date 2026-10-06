@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../KashefProject/KashefProject/Models/HeritageCalendarViewModel.cs" Link="Models.cs" />
+    <Compile Include="../../KashefProject/KashefProject/Services/HeritageCalendarService.cs" Link="Service.cs" />
+    <Compile Include="../../KashefProject/KashefProject/Data/HeritageCalendarCatalog.cs" Link="Catalog.cs" />
+  </ItemGroup>
+</Project>
