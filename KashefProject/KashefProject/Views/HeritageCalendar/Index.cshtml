@@ -6,7 +6,7 @@
     string N(int value) => HeritageCalendarText.Number(value, Model.Language);
     string D(DateOnly date) => HeritageCalendarText.Date(date, Model.Language);
     ViewData["Title"] = T("Iranian Imperial Heritage Calendar", "تقویم شاهنشاهی میراث ایران");
-    ViewData["Description"] = T("Explore ancient Iranian festivals and royal anniversaries with an Imperial solar calendar, countdowns and documented sources.", "تقویم شاهنشاهی جشن‌های باستانی، آیین‌های ایرانی و سالگردهای تاریخی؛ با روزشمار، توضیح تاریخ‌ها و منابع.");
+    ViewData["Description"] = T("Explore ancient Iranian festivals and royal anniversaries with an Imperial solar calendar and countdowns.", "تقویم شاهنشاهی جشن‌های باستانی، آیین‌های ایرانی و سالگردهای تاریخی؛ با روزشمار و توضیح تاریخ‌ها.");
     ViewData["PageLanguage"] = Model.Language;
     var next = Model.Upcoming.FirstOrDefault();
     string Link(int year, int month, int? day = null, string? category = null, string? language = null) =>
@@ -95,7 +95,7 @@
                 @foreach (var day in Model.Days)
                 {
                     var label = D(day.Date) + (day.IsToday ? T(", today", "، امروز") : "") + (day.Events.Count > 0 ? ", " + string.Join(", ", day.Events.Select(e => e.Event.Title)) : T(", no listed events", "، بدون رویداد ثبت‌شده"));
-                    <a data-calendar-nav href="@Link(Model.Year, Model.Month, day.Number)" class="calendar-day @(day.IsToday ? "is-today" : "") @(day.IsSelected ? "is-selected" : "") @(day.Date.DayOfWeek == DayOfWeek.Friday ? "is-friday" : "")" aria-current="@(day.IsSelected ? "date" : null)" aria-label="@label" data-calendar-day="@day.Number">
+                    <a data-calendar-nav href="@Link(Model.Year, Model.Month, day.Number)" class="calendar-day @(day.Events.Count > 0 ? "has-events" : "") @(day.IsToday ? "is-today" : "") @(day.IsSelected ? "is-selected" : "") @(day.Date.DayOfWeek == DayOfWeek.Friday ? "is-friday" : "")" aria-current="@(day.IsSelected ? "date" : null)" aria-label="@label" data-calendar-day="@day.Number">
                         <span class="day-number">@N(day.Number)</span>
                         @if (day.IsToday) { <small class="day-today">@T("today", "امروز")</small> }
                         <span class="day-event-dots" aria-hidden="true">@foreach (var category in day.Events.Select(e => e.Event.Category).Distinct()) { <i class="event-dot event-dot--@category"></i> }</span>
@@ -104,7 +104,7 @@
                     </a>
                 }
             </div>
-            <div class="calendar-legend"><span><i class="event-dot event-dot--ancient"></i> @T("Traditions", "آیین‌ها")</span><span><i class="event-dot event-dot--royal"></i> @T("Royal", "شاهنشاهی")</span><span><i class="event-dot event-dot--memorial"></i> @T("Commemorations", "یادبود")</span><span class="legend-today">@T("Outline: today", "حلقه: امروز")</span></div>
+            <div class="calendar-legend"><span><i class="event-dot event-dot--ancient"></i> @T("Traditions", "آیین‌ها")</span><span><i class="event-dot event-dot--royal"></i> @T("Royal", "شاهنشاهی")</span><span><i class="event-dot event-dot--memorial"></i> @T("Commemorations", "یادبود")</span></div>
         </div>
         <aside class="calendar-day-panel" id="day-events" aria-labelledby="selected-day-title">
             <span class="calendar-kicker">@T("THIS DAY’S STORY", "روایت این روز")</span>
@@ -113,10 +113,6 @@
             @if (Model.DayEvents.Count > 0)
             {
                 @foreach (var occurrence in Model.DayEvents) { <partial name="_EventDetail" model="occurrence" /> }
-            }
-            else
-            {
-                <div class="calendar-empty"><span aria-hidden="true">✳</span><h3>@T("Room for a new story.", "امروز، جای یک روایت تازه است.")</h3><p>@T("No events are listed for this day with your current filters. Choose a marked day, or explore the month’s occasions below.", "برای این روز با فیلتر فعلی رویدادی ثبت نشده. یک روز نشانه‌دار را انتخاب کنید یا رویدادهای ماه را در پایین ببینید.")</p></div>
             }
         </aside>
     </section>
@@ -127,7 +123,7 @@
             @foreach (var occurrence in Model.MonthEvents)
             {
                 <details class="calendar-agenda-card calendar-agenda-card--@occurrence.Event.Category">
-                    <summary><span class="event-category">@occurrence.CategoryName</span><strong>@occurrence.Event.Title</strong><span class="agenda-date">@occurrence.ImperialDate @if (occurrence.EndDate != occurrence.Date) { <span>@T("to", "تا") @D(occurrence.EndDate)</span> }</span><span class="agenda-expand">@T("Details & source", "جزئیات و منبع") <b aria-hidden="true">+</b></span></summary>
+                    <summary><span class="event-category">@occurrence.CategoryName</span><strong>@occurrence.Event.Title</strong><span class="agenda-date">@occurrence.ImperialDate @if (occurrence.EndDate != occurrence.Date) { <span>@T("to", "تا") @D(occurrence.EndDate)</span> }</span><span class="agenda-expand">@T("Details", "جزئیات") <b aria-hidden="true">+</b></span></summary>
                     <partial name="_EventDetail" model="occurrence" />
                 </details>
             }
@@ -153,8 +149,7 @@
             <details><summary>@T("Date conventions & calendar differences", "مبنای تاریخ‌ها و تفاوت تقویم‌ها")</summary>
                 <p>@T("This solar calendar uses the Imperial era and a Saturday-first week. Imperial years equal Solar Hijri years plus 1180; months, days and leap-year rules stay unchanged. Today and countdowns are calculated in Iran’s time zone.", "تقویم صفحه، خورشیدی با مبدأ شاهنشاهی و آغاز هفته شنبه است. سال شاهنشاهی برابر با سال هجری خورشیدی به‌اضافه ۱۱۸۰ است؛ ماه‌ها، روزها و قواعد کبیسه تغییر نمی‌کنند. «امروز» و تعداد روزهای باقی‌مانده به وقت ایران محاسبه می‌شود.")</p>
                 <p>@T("By default, traditional name-day festivals use matching month/day labels on solar months. This is a display convention, not a religious-calendar conversion. The 30-day option preserves their distance from Nowruz. The Zoroastrian religious Shahanshahi calendar is distinct from the Imperial era used here; this page is not a community-specific religious calendar.", "برای جشن‌های نام‌روز، حالت پیش‌فرض شماره روز و نام ماه سنتی را روی ماه خورشیدی نمایش می‌دهد؛ این یک شیوه نمایش است، نه تبدیل تقویم مذهبی. حالت «تطبیق ماه‌های ۳۰روزه» فاصله روزها از نوروز را حفظ می‌کند. گاه‌شماری مذهبی «شاهنشاهی» زرتشتی با مبدأ شاهنشاهی این صفحه متفاوت است؛ این صفحه مرجع تقویم مذهبی یک جامعه خاص نیست.")</p>
-                <p>@T("Gregorian anniversaries are converted from the source date each year, so their Imperial equivalent may shift by a day. Each occasion includes its own date basis and source. A modern commemoration or ritual date does not establish the exact date of an ancient historical event.", "سالگردهای میلادی از تاریخ منبع به تاریخ شاهنشاهی تبدیل می‌شوند؛ به همین دلیل ممکن است در سال‌های مختلف یک روز جابه‌جا شوند. هر رویداد، مبنا و منبع خودش را دارد. یادبود معاصر یا تاریخ آیینی به معنی تاریخ اثبات‌شده یک رخداد باستانی نیست.")</p>
-                <a href="https://www.iranicaonline.org/articles/calendars/calendars-ii-in-the-islamic-period/" target="_blank" rel="noopener noreferrer">@T("About the Imperial era — Encyclopaedia Iranica", "درباره مبدأ شاهنشاهی؛ ایرانیکا") ↗</a><br /><a href="https://avesta.org/zcal.html" target="_blank" rel="noopener noreferrer">@T("Explore Zoroastrian calendars", "مطالعه درباره تقویم‌های زرتشتی") ↗</a>
+                <p>@T("Gregorian anniversaries are converted each year, so their Imperial equivalent may shift by a day. Each occasion includes its own date basis. A modern commemoration or ritual date does not establish the exact date of an ancient historical event.", "سالگردهای میلادی هر سال به تاریخ شاهنشاهی تبدیل می‌شوند؛ به همین دلیل ممکن است در سال‌های مختلف یک روز جابه‌جا شوند. هر رویداد، مبنای تاریخ خودش را دارد. یادبود معاصر یا تاریخ آیینی به معنی تاریخ اثبات‌شده یک رخداد باستانی نیست.")</p>
             </details>
             <a class="calendar-shop-link" href="/shop/">@T("Iranian heritage, in your home", "میراث ایران، در خانه شما") <span aria-hidden="true">↗</span></a>
         </div>

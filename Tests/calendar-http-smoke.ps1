@@ -22,7 +22,12 @@ $page = Fetch '/calendar/?year=2585&month=8&day=4&lang=fa'
 Assert ($page.Contains('lang="fa"') -and $page.Contains('dir="rtl"')) 'Persian page and RTL main'
 Assert (([regex]::Matches($page, 'data-calendar-day=').Count) -eq 30) 'Thirty-day Aban grid'
 Assert ($page.Contains('زادروز محمدرضاشاه پهلوی') -and $page.Contains('تاج‌گذاری شاه و شهبانو')) 'Both events on fourth Aban'
-Assert ($page.Contains('target="_blank" rel="noopener noreferrer"')) 'Safe source links'
+Assert (!$page.Contains('event-source') -and !$page.Contains('Details & source') -and !$page.Contains('جزئیات و منبع') -and !$page.Contains('iranicaonline.org') -and !$page.Contains('avesta.org')) 'Sources removed from the public calendar'
+Assert (!$english.Contains('event-source') -and !$english.Contains('Details & source')) 'English event details have no sources'
+$quiet = Fetch '/calendar/?year=2585&month=7&day=24'
+$quietFa = Fetch '/calendar/?year=2585&month=7&day=24&lang=fa'
+Assert (!$quiet.Contains('Room for a new story') -and !$quiet.Contains('calendar-empty') -and !$quietFa.Contains('امروز، جای یک روایت تازه') -and !$quietFa.Contains('calendar-empty')) 'No placeholder story on days without events in either language'
+Assert ([regex]::IsMatch($quiet, '<aside class="calendar-day-panel"[^>]*>\s*<span[^>]*>[^<]*</span>\s*<h2[^>]*>[^<]*</h2>\s*<time[^>]*>[^<]*</time>\s*</aside>')) 'Empty day keeps its date heading and a blank detail panel'
 Assert ($page.Contains('href="/calendar') -and $page.Contains('name="convention"')) 'Calendar navigation and date-convention selector'
 Assert ($page.Contains('سال شاهنشاهی') -and $page.Contains('value="2585"') -and $page.Contains('۴ آبان ۲۵۸۵')) 'Imperial year in selector and event dates'
 Assert (!$page.Contains('year=1405') -and $page.Contains('year=2585')) 'All generated navigation uses imperial years'
@@ -49,6 +54,7 @@ foreach ($path in @('/calendar/?year=2681', '/calendar/?year=invalid', '/calenda
 }
 $css = Fetch '/css/calendar.css'
 Assert ($css.Contains('@media') -and $css.Contains('.heritage-calendar')) 'Responsive scoped stylesheet served'
+Assert ($css.Contains('prefers-reduced-motion') -and $css.Contains('calendar-panel-reveal')) 'Modern effects respect reduced-motion preferences'
 foreach ($path in @('/', '/shop/', '/gallery/')) {
     $store = Fetch $path
     Assert ($store.Contains('href="/calendar/"')) "Calendar linked from $path"

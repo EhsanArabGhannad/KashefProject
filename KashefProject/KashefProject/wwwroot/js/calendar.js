@@ -7,6 +7,24 @@
   history.scrollRestoration = 'manual';
   remember(position());
 
+  // A low-cost pointer light for desktop users; never moves layout or scroll.
+  const pointerEffects = window.matchMedia('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
+  let lightFrame;
+  document.addEventListener('pointermove', event => {
+    if (!pointerEffects.matches || event.pointerType === 'touch') return;
+    const panel = event.target.closest('.calendar-month-panel');
+    if (!panel) return;
+    cancelAnimationFrame(lightFrame);
+    const x = event.clientX;
+    const y = event.clientY;
+    lightFrame = requestAnimationFrame(() => {
+      if (!panel.isConnected) return;
+      const bounds = panel.getBoundingClientRect();
+      panel.style.setProperty('--calendar-light-x', `${x - bounds.left}px`);
+      panel.style.setProperty('--calendar-light-y', `${y - bounds.top}px`);
+    });
+  }, { passive: true });
+
   async function navigate(url, trigger, fromHistory = false, historyPoint = null) {
     pending?.abort();
     const request = new AbortController();

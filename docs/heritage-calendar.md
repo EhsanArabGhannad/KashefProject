@@ -1,6 +1,6 @@
 # Iranian heritage calendar
 
-Public route: `/calendar/`. English by default (`lang=en`), with a prominent English / فارسی switch above the hero. `lang=fa` renders a Persian RTL main region; shared store navigation remains English/LTR. The cream, orange, lime, bold-heading and rounded-panel treatment follows the existing storefront.
+Public route: `/calendar/`. English by default (`lang=en`), with a prominent English / فارسی switch above the hero. `lang=fa` renders a Persian RTL main region; shared store navigation remains English/LTR. The cream, orange, lime, bold-heading and rounded-panel treatment follows the existing storefront. The monthly grid uses a dark gradient surface, lime selection, orange today outline, softly lit event dots, elevated hover states and a subtle desktop pointer spotlight. Content fades do not move layout; reduced-motion preferences disable motion and the pointer effect.
 
 ## Features
 
@@ -9,7 +9,8 @@ Public route: `/calendar/`. English by default (`lang=en`), with a prominent Eng
 - Countdown to the next matching event; ongoing multi-day festivals count as today.
 - Ancient festivals, royal anniversaries and modern commemorations as separate filters.
 - Whole-year search across both English and Persian descriptions, including Arabic/Persian kaf and ya normalization.
-- Source, historical caveat and recurrence basis on every event. Native expandable month agenda.
+- Historical caveat and recurrence basis on every event. Native expandable month agenda. Sources remain in the editorial catalogue for maintenance but are no longer rendered as links, labels or a public reference section.
+- Days with no matching events retain the date heading and a blank detail panel, without a placeholder illustration or story message. The desktop panel stretches alongside the month grid; mobile uses a compact minimum height.
 - Day, month, category, search, today and language controls update the calendar without a page reload or anchor jump, preserving scroll position and keyboard focus. Back/Forward restores the calendar state and stored scroll position.
 - Server-rendered GET fallback: controls remain usable without JavaScript (native page navigation). Language is retained in every generated calendar link and form. Dates, filters and search terms survive language changes.
 
@@ -27,7 +28,11 @@ Gregorian-based anniversaries are converted afresh each year; historically attes
 
 Entries live in `Data/HeritageCalendarCatalog.cs`; each needs a stable unique ID, category, concise original description, explicit date rule, HTTPS source and, when relevant, uncertainty note and original Gregorian historical year. Every ID also needs a matching English entry in `Data/HeritageCalendarEnglish.cs`, translating its description and caveats without changing sources or recurrence rules. `Duration` supports multi-day festivals. Editing the catalogue requires a new build/release; calendar editing is not currently part of the admin panel. No database migration or customer-data change is needed.
 
-Sources include Encyclopaedia Iranica, UNESCO's Yalda entry, Avesta's calendar reference and Modi's primary account, the Farah Pahlavi foundation/site, and the Tel Aviv University Iranian studies center. Links are visible alongside the events.
+Internal sources include Encyclopaedia Iranica, UNESCO's Yalda entry, Avesta's calendar reference and Modi's primary account, the Farah Pahlavi foundation/site, and the Tel Aviv University Iranian studies center. Source records are retained in code, not displayed on the public page.
+
+## October 2026 visual update
+
+Local Release build passed without warnings or errors, the calendar runner passed 8,353 assertions, and the updated local HTTP smoke suite passed 30 checks, including source removal and blank day panels in both languages. Browser visual/interactive verification of this redesign remains pending: the Windows Computer Use tool stopped because it could not confidently determine the browser URL. The redesign has not been deployed to production.
 
 ## Verification
 
