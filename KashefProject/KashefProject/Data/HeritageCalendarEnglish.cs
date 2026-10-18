@@ -51,6 +51,8 @@ public static class HeritageCalendarEnglish
 
     public static HeritageEvent Translate(HeritageEvent source)
     {
+        if (source.TitleEn is not null)
+            return source with { Title = source.TitleEn, Description = source.DescriptionEn ?? "", Note = source.NoteEn ?? "" };
         // A missing translation is a catalogue error, not a silent mixed-language fallback.
         var entry = Entries[source.Id];
         var note = source.Rule == HeritageDateRule.NameDay

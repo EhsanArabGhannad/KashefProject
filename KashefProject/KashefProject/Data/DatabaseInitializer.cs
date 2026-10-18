@@ -11,6 +11,7 @@ public static class DatabaseInitializer
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<StoreDbContext>();
         await db.Database.MigrateAsync();
+        await SeedCalendarAsync(db);
 
         if (!await db.Categories.AnyAsync())
         {
@@ -71,6 +72,27 @@ public static class DatabaseInitializer
             db.Products.Add(entity);
         }
 
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
+    }
+
+    public static async Task SeedCalendarAsync(StoreDbContext db)
+    {
+        if (await db.CalendarCatalogStates.AnyAsync(item => item.Id == 1)) return;
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        foreach (var item in HeritageCalendarCatalog.Events)
+        {
+            var english = HeritageCalendarEnglish.Translate(item);
+            db.CalendarEvents.Add(new CalendarEvent
+            {
+                Key = item.Id, TitleFa = item.Title, TitleEn = english.Title,
+                DescriptionFa = item.Description, DescriptionEn = english.Description,
+                NoteFa = item.Note, NoteEn = english.Note, Category = item.Category,
+                Rule = item.Rule, Month = item.Month, Day = item.Day, Duration = item.Duration,
+                HistoricalYear = item.HistoricalYear, SourceTitle = item.SourceTitle, SourceUrl = item.SourceUrl
+            });
+        }
+        db.CalendarCatalogStates.Add(new CalendarCatalogState { Id = 1 });
         await db.SaveChangesAsync();
         await transaction.CommitAsync();
     }

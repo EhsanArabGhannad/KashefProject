@@ -61,6 +61,10 @@
 .calendar-days { animation: calendar-panel-reveal .32s var(--calendar-ease) both; }
 .calendar-day { min-height: 104px; padding: 10px 9px; border: 1px solid #ffffff12; background: linear-gradient(145deg, #ffffff0d, #ffffff04); border-radius: 14px; position: relative; display: flex; flex-direction: column; align-items: start; gap: 3px; transition: background .22s, border-color .22s, box-shadow .22s, transform .22s var(--calendar-ease); }
 .calendar-day.has-events { background: linear-gradient(145deg, #ffffff17, #ffffff08); border-color: #ffffff25; }
+.calendar-day.has-image { isolation: isolate; overflow: hidden; }
+.day-background { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .32; mask-image: linear-gradient(to bottom, #000 25%, #0002); z-index: -1; pointer-events: none; transition: opacity .22s; }
+.is-selected .day-background { opacity: .16; }
+@media (hover: hover) and (pointer: fine) { .calendar-day.has-image:not(.is-selected):hover .day-background { opacity: .42; } }
 .calendar-day.is-today { border-color: var(--orange); box-shadow: inset 0 0 0 1px #ff683233; }
 .calendar-day.is-selected { background: linear-gradient(145deg, #e5ff91, var(--acid)); color: #181c15; border-color: #eaffb2; box-shadow: 0 5px 20px #d1ff4b20, inset 0 1px 0 #ffffffb0; }
 .calendar-day.is-selected::after { content: ""; position: absolute; top: 8px; inset-inline-end: 8px; width: 5px; height: 5px; background: currentColor; border-radius: 50%; }

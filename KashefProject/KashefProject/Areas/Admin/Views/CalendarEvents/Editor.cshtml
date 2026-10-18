@@ -1,0 +1,46 @@
+@model CalendarEventEditorViewModel
+@{
+    var editing = Model.Id > 0;
+    ViewData["Title"] = editing ? "Edit calendar event" : "Add calendar event";
+    var action = editing ? $"/admin/calendar-events/{Model.Id}/edit" : "/admin/calendar-events/create";
+}
+<div class="editor-heading"><a href="/admin/calendar-events">← Back to calendar events</a><span class="admin-eyebrow">HERITAGE CALENDAR</span><h1>@(editing ? "Edit event" : "Add event")</h1></div>
+<form method="post" action="@action" enctype="multipart/form-data" class="product-editor">
+    @Html.AntiForgeryToken()
+    <input asp-for="Id" type="hidden" /><input asp-for="Revision" type="hidden" />
+    <div asp-validation-summary="All" class="validation-summary" role="alert"></div>
+    <section class="editor-card editor-grid">
+        <h2>Event content · English & فارسی</h2>
+        <label><span>English title</span><input asp-for="TitleEn" maxlength="180" required /></label>
+        <label><span>عنوان فارسی</span><input asp-for="TitleFa" lang="fa" dir="rtl" maxlength="180" required /></label>
+        <label><span>English description</span><textarea asp-for="DescriptionEn" rows="5" maxlength="4000" required></textarea></label>
+        <label><span>توضیحات فارسی</span><textarea asp-for="DescriptionFa" lang="fa" dir="rtl" rows="5" maxlength="4000" required></textarea></label>
+        <label><span>English date note (optional)</span><textarea asp-for="NoteEn" rows="3" maxlength="2000"></textarea></label>
+        <label><span>یادداشت تاریخ به فارسی (اختیاری)</span><textarea asp-for="NoteFa" lang="fa" dir="rtl" rows="3" maxlength="2000"></textarea></label>
+    </section>
+    <section class="editor-card editor-grid">
+        <h2>Date & visibility</h2>
+        <label><span>Category</span><select asp-for="Category"><option value="ancient">Festivals & traditions</option><option value="royal">Royal anniversaries</option><option value="memorial">Modern commemorations</option></select></label>
+        <label><span>Date system / recurrence</span><select asp-for="Rule"><option value="Solar">Imperial solar date</option><option value="Gregorian">Gregorian anniversary</option><option value="NameDay">Traditional name-day festival</option><option value="LastWednesdayEve">Tuesday before the last Wednesday of the year</option><option value="LastFiveDays">Starts five days before solar year-end</option></select></label>
+        <label><span>Month</span><input asp-for="Month" type="number" min="1" max="12" required /></label>
+        <label><span>Day</span><input asp-for="Day" type="number" min="1" max="31" required /></label>
+        <p class="full calendar-admin-help">Solar: 1 Farvardin, 2 Ordibehesht, 3 Khordad, 4 Tir, 5 Mordad, 6 Shahrivar, 7 Mehr, 8 Aban, 9 Azar, 10 Dey, 11 Bahman, 12 Esfand. Gregorian: 1 January through 12 December. The final two rules calculate the date automatically; month/day are ignored. Leap-only dates appear only in leap years.</p>
+        <label><span>Duration (days)</span><input asp-for="Duration" type="number" min="1" max="31" required /></label>
+        <label><span>Only in Imperial year (optional)</span><input asp-for="OnlyImperialYear" type="number" min="2480" max="2680" placeholder="Blank = repeats every year" /></label>
+        <label><span>Earliest Gregorian year (optional)</span><input asp-for="HistoricalYear" type="number" min="1" max="9998" placeholder="For historical anniversaries, e.g. 1967" /></label>
+        <label class="check-row"><input asp-for="IsPublished" /><span>Visible on the public calendar</span></label>
+    </section>
+    <section class="editor-card">
+        <h2>Day-card background</h2>
+        <p class="calendar-admin-help">Optional JPG, PNG or WebP, up to 8 MB. A portrait image (around 600 × 800 px) works well; it is cropped to fill the day card and faded automatically. If a day has several events, the first event with an image supplies its background.</p>
+        <div class="calendar-image-preview">
+            <div class="calendar-preview-day"><img id="calendar-image-preview" src="@Model.ExistingImagePath" alt="" hidden="@(Model.ExistingImagePath is null)" /><strong id="calendar-preview-number">@Model.Day</strong><span id="calendar-preview-title">@Model.TitleEn</span></div>
+            <span class="subtle-copy">Faded card preview</span>
+        </div>
+        @if (Model.ExistingImagePath is not null) { <label class="check-row"><input asp-for="RemoveImage" /><span>Remove the current image</span></label> }
+        <label class="upload-field"><span>@(editing ? "Add or replace image" : "Upload image")</span><input asp-for="Image" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+        <p class="calendar-admin-help">Uploading a new image replaces the previous one. If validation fails, select the file again before saving.</p>
+    </section>
+    <div class="editor-actions"><a href="/admin/calendar-events">Cancel</a><button class="admin-primary" type="submit">@(editing ? "Save changes" : "Add event") →</button></div>
+</form>
+@section Scripts { <script src="~/js/calendar-admin.js" asp-append-version="true" defer></script> }

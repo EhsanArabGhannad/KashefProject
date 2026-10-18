@@ -95,7 +95,9 @@
                 @foreach (var day in Model.Days)
                 {
                     var label = D(day.Date) + (day.IsToday ? T(", today", "، امروز") : "") + (day.Events.Count > 0 ? ", " + string.Join(", ", day.Events.Select(e => e.Event.Title)) : T(", no listed events", "، بدون رویداد ثبت‌شده"));
-                    <a data-calendar-nav href="@Link(Model.Year, Model.Month, day.Number)" class="calendar-day @(day.Events.Count > 0 ? "has-events" : "") @(day.IsToday ? "is-today" : "") @(day.IsSelected ? "is-selected" : "") @(day.Date.DayOfWeek == DayOfWeek.Friday ? "is-friday" : "")" aria-current="@(day.IsSelected ? "date" : null)" aria-label="@label" data-calendar-day="@day.Number">
+                    var background = day.Events.Select(e => e.Event.ImagePath).FirstOrDefault(path => path is not null);
+                    <a data-calendar-nav href="@Link(Model.Year, Model.Month, day.Number)" class="calendar-day @(background is not null ? "has-image" : "") @(day.Events.Count > 0 ? "has-events" : "") @(day.IsToday ? "is-today" : "") @(day.IsSelected ? "is-selected" : "") @(day.Date.DayOfWeek == DayOfWeek.Friday ? "is-friday" : "")" aria-current="@(day.IsSelected ? "date" : null)" aria-label="@label" data-calendar-day="@day.Number">
+                        @if (background is not null) { <img class="day-background" src="@background" alt="" aria-hidden="true" loading="lazy" decoding="async" /> }
                         <span class="day-number">@N(day.Number)</span>
                         @if (day.IsToday) { <small class="day-today">@T("today", "امروز")</small> }
                         <span class="day-event-dots" aria-hidden="true">@foreach (var category in day.Events.Select(e => e.Event.Category).Distinct()) { <i class="event-dot event-dot--@category"></i> }</span>

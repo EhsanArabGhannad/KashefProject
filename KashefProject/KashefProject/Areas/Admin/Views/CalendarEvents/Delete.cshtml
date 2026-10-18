@@ -1,0 +1,11 @@
+@model CalendarEvent
+@{ ViewData["Title"] = "Delete calendar event"; }
+<div class="editor-heading"><a href="/admin/calendar-events">← Back to calendar events</a><h1>Delete event?</h1></div>
+<section class="editor-card">
+    <h2>@Model.TitleEn</h2><p lang="fa" dir="rtl">@Model.TitleFa</p>
+    <p>This removes the event from all calendar years, along with its uploaded image. This cannot be undone. You can hide it instead by editing its visibility.</p>
+    <form method="post" action="/admin/calendar-events/@Model.Id/delete" class="editor-actions">
+        @Html.AntiForgeryToken()<input type="hidden" name="revision" value="@Model.Revision" />
+        <a href="/admin/calendar-events">Cancel</a><button class="admin-primary" type="submit">Delete event</button>
+    </form>
+</section>

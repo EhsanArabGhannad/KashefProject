@@ -16,10 +16,20 @@ public sealed class StoreDbContext(DbContextOptions<StoreDbContext> options) : I
     public DbSet<OrderNotification> OrderNotifications => Set<OrderNotification>();
     public DbSet<ContactInquiry> ContactInquiries => Set<ContactInquiry>();
     public DbSet<CustomerProfile> CustomerProfiles => Set<CustomerProfile>();
+    public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
+    public DbSet<CalendarCatalogState> CalendarCatalogStates => Set<CalendarCatalogState>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.Entity<CalendarEvent>().HasIndex(item => item.Key).IsUnique();
+        builder.Entity<CalendarEvent>().Property(item => item.Rule).HasConversion<string>().HasMaxLength(32);
+        builder.Entity<CalendarEvent>().ToTable(table =>
+        {
+            table.HasCheckConstraint("CK_CalendarEvent_Month", "Month BETWEEN 1 AND 12");
+            table.HasCheckConstraint("CK_CalendarEvent_Day", "Day BETWEEN 1 AND 31");
+            table.HasCheckConstraint("CK_CalendarEvent_Duration", "Duration BETWEEN 1 AND 31");
+        });
         builder.Entity<ShoppingCart>().HasIndex(cart => cart.OwnerHash).IsUnique();
         builder.Entity<ShoppingCartItem>().HasIndex(item => new { item.ShoppingCartId, item.ProductId }).IsUnique();
         builder.Entity<ShoppingCartItem>().ToTable(table => table.HasCheckConstraint("CK_CartItem_Quantity", "Quantity BETWEEN 1 AND 20"));

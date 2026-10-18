@@ -7,7 +7,9 @@ public enum HeritageDateRule { Solar, Gregorian, NameDay, LastWednesdayEve, Last
 public sealed record HeritageEvent(
     string Id, string Title, string Category, string Description,
     HeritageDateRule Rule, int Month, int Day, string SourceTitle, string SourceUrl,
-    string Note = "", int Duration = 1, int? HistoricalYear = null);
+    string Note = "", int Duration = 1, int? HistoricalYear = null,
+    string? TitleEn = null, string? DescriptionEn = null, string? NoteEn = null,
+    string? ImagePath = null, int? OnlyImperialYear = null);
 
 public sealed record HeritageOccurrence(HeritageEvent Event, DateOnly Date, DateOnly EndDate, string DateBasis, string Language = "fa")
 {

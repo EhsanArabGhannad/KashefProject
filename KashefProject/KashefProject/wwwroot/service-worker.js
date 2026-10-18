@@ -1,6 +1,6 @@
 // Bump this version when any offline asset changes. Updates activate after old tabs close.
 const CACHE_PREFIX = "craftisma-offline-";
-const CACHE_NAME = `${CACHE_PREFIX}v1`;
+const CACHE_NAME = `${CACHE_PREFIX}v2`;
 const OFFLINE_PAGE = "/offline.html";
 const OFFLINE_ASSETS = [OFFLINE_PAGE, "/css/offline.css", "/js/offline.js", "/icons/icon-192.png"];
 

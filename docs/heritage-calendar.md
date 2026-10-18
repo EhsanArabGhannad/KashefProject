@@ -26,13 +26,13 @@ Gregorian-based anniversaries are converted afresh each year; historically attes
 
 ## Maintaining content
 
-Entries live in `Data/HeritageCalendarCatalog.cs`; each needs a stable unique ID, category, concise original description, explicit date rule, HTTPS source and, when relevant, uncertainty note and original Gregorian historical year. Every ID also needs a matching English entry in `Data/HeritageCalendarEnglish.cs`, translating its description and caveats without changing sources or recurrence rules. `Duration` supports multi-day festivals. Editing the catalogue requires a new build/release; calendar editing is not currently part of the admin panel. No database migration or customer-data change is needed.
+The new management feature stores events in `CalendarEvents`, editable at `/admin/calendar-events`. On the first startup after migration, `DatabaseInitializer.SeedCalendarAsync` imports the 38 original Persian/English entries from `Data/HeritageCalendarCatalog.cs` and `Data/HeritageCalendarEnglish.cs`. A separate durable import marker prevents deleted events (including an entirely empty catalogue) being recreated after restart. Thereafter the public controller reads only published database events: content edits need no new release. The source-backed files remain import fixtures, not a live override. See `calendar-event-management.md` for administration, image behavior, validation and verification. This feature adds two calendar-only tables; customer/order data is unchanged.
 
 Internal sources include Encyclopaedia Iranica, UNESCO's Yalda entry, Avesta's calendar reference and Modi's primary account, the Farah Pahlavi foundation/site, and the Tel Aviv University Iranian studies center. Source records are retained in code, not displayed on the public page.
 
 ## October 2026 visual update
 
-Local Release build passed without warnings or errors, the calendar runner passed 8,353 assertions, and the updated local HTTP smoke suite passed 30 checks, including source removal and blank day panels in both languages. Browser visual/interactive verification of this redesign remains pending: the Windows Computer Use tool stopped because it could not confidently determine the browser URL. The redesign has not been deployed to production.
+Local Release build passed without warnings or errors, the calendar runner passed 8,353 assertions, and the updated local HTTP smoke suite passed 30 checks, including source removal and blank day panels in both languages. Browser visual/interactive verification of this redesign remains pending: the Windows Computer Use tool stopped because it could not confidently determine the browser URL. The redesign was published on 2026-10-15; live calendar checks (30), HTTPS PWA checks (31), and exact CSS/JavaScript comparisons passed. See `heritage-calendar-launch.md` for deployment and backup details.
 
 ## Verification
 

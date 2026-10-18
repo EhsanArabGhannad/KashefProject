@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex,nofollow" />
     <title>@ViewData["Title"] | Craftisma Admin</title>
+    <partial name="_Favicons" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -13,7 +14,7 @@
 </head>
 <body>
     <header class="admin-header">
-        <a class="admin-brand" href="/admin"><b>C</b><span>Craftisma Admin</span></a>
+        <a class="admin-brand" href="/admin"><img src="~/images/brand/craftisma-logo.png" asp-append-version="true" width="40" height="40" alt="" /><span>Craftisma Admin</span></a>
         @if (User.Identity?.IsAuthenticated == true)
         {
             <nav>
@@ -21,6 +22,7 @@
                 <a href="/admin/products">Products</a>
                 <a href="/admin/orders">Orders</a>
                 <a href="/admin/inquiries">Inquiries</a>
+                <a href="/admin/calendar-events">Calendar</a>
                 <a href="/" target="_blank" rel="noopener">View store ↗</a>
                 <form method="post" action="/admin/logout">
                     @Html.AntiForgeryToken()
@@ -32,5 +34,6 @@
     <main class="admin-shell">
         @RenderBody()
     </main>
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

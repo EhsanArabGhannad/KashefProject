@@ -44,9 +44,9 @@ img { display: block; max-width: 100%; }
 .menu-button b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 850; font-size: 1.15rem; }
 .brand-mark {
-  width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: var(--acid);
-  display: grid; place-items: center; font-family: Arial, sans-serif; font-size: .9rem;
+  width: 40px; height: 40px; flex: 0 0 auto; object-fit: contain;
 }
+.brand--footer .brand-mark { width: 48px; height: 48px; }
 .nav-links { display: flex; gap: 36px; font-size: .86rem; }
 .nav-links a { position: relative; }
 .nav-links a::after { content: ""; position: absolute; left: 0; right: 100%; bottom: -7px; height: 1px; background: currentColor; transition: right .25s; }

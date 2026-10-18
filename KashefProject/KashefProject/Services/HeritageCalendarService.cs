@@ -11,7 +11,8 @@ public sealed class HeritageCalendarService
     public const int MaxYear = 2680;
 
     public HeritageCalendarViewModel Build(int? year, int? month, int? day, string? category,
-        string? query, string? convention, DateTimeOffset? now = null, string? language = null)
+        string? query, string? convention, DateTimeOffset? now = null, string? language = null,
+        IEnumerable<HeritageEvent>? eventDefinitions = null)
     {
         var pc = new PersianCalendar();
         var iranTime = TimeZoneInfo.ConvertTime(now ?? DateTimeOffset.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Asia/Tehran"));
@@ -30,15 +31,21 @@ public sealed class HeritageCalendarService
         query = (query ?? "").Trim();
         if (query.Length > 80) query = query[..80];
         var search = Normalize(query);
-        var definitions = HeritageCalendarCatalog.Events.Where(e =>
+        var allDefinitions = (eventDefinitions ?? HeritageCalendarCatalog.Events).ToArray();
+        var definitions = allDefinitions.Where(e =>
             (category == "all" || e.Category == category) &&
             (search.Length == 0 || Normalize(e.Title + " " + e.Description + " " + HeritageCalendarEnglish.Translate(e).Title + " " + HeritageCalendarEnglish.Translate(e).Description).Contains(search, StringComparison.Ordinal))).ToArray();
-        var occurrences = Occurrences(y, convention, definitions, language);
         var start = SolarDate(y, m, 1);
         var end = start.AddDays(daysInMonth - 1);
         var selected = start.AddDays(d - 1);
         var currentYear = pc.GetYear(iranTime.DateTime);
-        var upcoming = Occurrences(currentYear, convention, definitions, language)
+        var yearStart = SolarDate(y, 1, 1);
+        var yearEnd = SolarDate(y + 1, 1, 1).AddDays(-1);
+        var occurrences = Occurrences(y - 1, convention, definitions, language)
+            .Concat(Occurrences(y, convention, definitions, language))
+            .Where(e => e.Date <= yearEnd && e.EndDate >= yearStart).OrderBy(e => e.Date).ThenBy(e => e.Event.Id).ToArray();
+        var upcoming = Occurrences(currentYear - 1, convention, definitions, language)
+            .Concat(Occurrences(currentYear, convention, definitions, language))
             .Concat(Occurrences(currentYear + 1, convention, definitions, language))
             .Where(e => e.EndDate >= today).OrderBy(e => e.Date < today ? today : e.Date).ThenBy(e => e.Event.Id).Take(4).ToArray();
         return new HeritageCalendarViewModel
@@ -46,7 +53,7 @@ public sealed class HeritageCalendarService
             Year = imperialYear, Month = m, Day = d, Today = today, SelectedDate = selected,
             Category = category, Query = query, Convention = convention, Language = language,
             LeadingDays = ((int)start.DayOfWeek + 1) % 7,
-            TotalEvents = HeritageCalendarCatalog.Events.Count,
+            TotalEvents = allDefinitions.Length,
             YearEvents = occurrences,
             MonthEvents = occurrences.Where(e => e.Date <= end && e.EndDate >= start).ToArray(),
             DayEvents = occurrences.Where(e => e.Date <= selected && e.EndDate >= selected).ToArray(),
@@ -73,6 +80,7 @@ public sealed class HeritageCalendarService
         var fa = language == "fa";
         foreach (var definition in definitions ?? HeritageCalendarCatalog.Events)
         {
+            if (definition.OnlyImperialYear.HasValue && definition.OnlyImperialYear != HeritageCalendarText.ImperialYear(year)) continue;
             var e = fa ? definition : HeritageCalendarEnglish.Translate(definition);
             var basis = fa ? "تاریخ ثابت شاهنشاهی (خورشیدی)" : "Fixed Imperial (solar) date";
             DateOnly date;
@@ -83,6 +91,7 @@ public sealed class HeritageCalendarService
                     for (var gy = start.Year; gy <= end.Year; gy++)
                     {
                         if (e.HistoricalYear.HasValue && gy < e.HistoricalYear.Value) continue;
+                        if (e.Day > DateTime.DaysInMonth(gy, e.Month)) continue;
                         var anniversary = new DateOnly(gy, e.Month, e.Day);
                         if (anniversary >= start && anniversary <= end)
                             result.Add(new(e, anniversary, anniversary.AddDays(e.Duration - 1), fa ? "سالگرد بر مبنای تاریخ میلادی منبع؛ معادل شاهنشاهی هر سال محاسبه می‌شود" : "Anniversary based on the source’s Gregorian date; its Imperial equivalent is recalculated each year", language));
@@ -109,6 +118,7 @@ public sealed class HeritageCalendarService
                     basis = fa ? "پنج روز پایانی سال خورشیدی؛ نمایش فصلی، با احتساب کبیسه" : "Final five days of the solar year; seasonal display including leap years";
                     break;
                 default:
+                    if (e.Day > new PersianCalendar().GetDaysInMonth(year, e.Month)) continue;
                     date = SolarDate(year, e.Month, e.Day);
                     break;
             }
